@@ -6,7 +6,6 @@ use robotics_lib::world::tile::TileType;
 
 pub(crate) const BLOCKS_TEXTURES_DIR_PATH: &str = "/blocks";
 pub(crate) const HALFS_TEXTURES_DIR_PATH: &str = "/halfs";
-pub(crate) const ELEVATION_BLOCK_BEGIN: usize = 6; // from 0..<5 mesh uses halfs, else uses blocks
 
 pub struct TileTypeTexture {
     pub block: Image,
