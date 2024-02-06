@@ -2,7 +2,7 @@ use ggez::{
     context::Has,
     graphics::{GraphicsContext, Image},
 };
-use robotics_lib::world::tile::TileType;
+use robotics_lib::world::tile::{Tile, TileType};
 
 pub(crate) const BLOCKS_TEXTURES_DIR_PATH: &str = "/blocks";
 pub(crate) const HALFS_TEXTURES_DIR_PATH: &str = "/halfs";
@@ -131,4 +131,25 @@ impl TileTypeTexture {
             },
         }
     }
+}
+
+pub fn load_tiles_matrix_textures(
+    gfx: &impl Has<GraphicsContext>,
+    matrix: &Vec<Vec<Tile>>,
+) -> Vec<Vec<Image>> {
+    matrix
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|tile| {
+                    let texture = TileTypeTexture::from_tiletype(gfx, &tile.tile_type);
+                    if tile.elevation < 2 {
+                        texture.half
+                    } else {
+                        texture.block
+                    }
+                })
+                .collect()
+        })
+        .collect()
 }
