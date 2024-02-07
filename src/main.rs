@@ -77,7 +77,7 @@ fn main() {
         map_images: textures::load_tiles_matrix_textures(&ctx, &map),
         visualizer: Visualizer::new(
             textures::load_tiles_matrix_textures(&ctx, &map),
-            vec2(0.0, 0.0),
+            vec2(200.0, 100.0),
             4.0,
         ),
     };

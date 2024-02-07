@@ -12,11 +12,7 @@ pub struct Visualizer {
 }
 
 impl Visualizer {
-    pub fn new(
-        images_matrix: Vec<Vec<Image>>,
-        origin: Vec2,
-        image_scale: f32,
-    ) -> Self {
+    pub fn new(images_matrix: Vec<Vec<Image>>, origin: Vec2, image_scale: f32) -> Self {
         Self {
             images_matrix,
             origin,
@@ -37,10 +33,11 @@ impl Visualizer {
 
         self.images_matrix.iter().enumerate().for_each(|(y, row)| {
             row.iter().enumerate().for_each(|(x, image)| {
-                let image_x = (image.width() as f32 * 0.5 * self.image_scale)
-                    * (self.images_matrix.len() - y + x) as f32;
-                let image_y =
-                    ((image.height() - 1) as f32 * 0.25 * self.image_scale) * (x + y) as f32;
+                let image_x = self.origin.x
+                    + (image.width() as f32 * 0.5 * self.image_scale)
+                        * (self.images_matrix.len() - y + x) as f32;
+                let image_y = self.origin.y
+                    + ((image.height() - 1) as f32 * 0.25 * self.image_scale) * (x + y) as f32;
                 let draw_param = ggez::graphics::DrawParam::new()
                     .dest(Vec2::new(image_x, image_y))
                     .scale(Vec2::new(4.0, 4.0));
