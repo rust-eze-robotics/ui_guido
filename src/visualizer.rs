@@ -1,6 +1,6 @@
 use ggez::{
     context::{Has, HasMut},
-    glam::Vec2,
+    glam::{Vec2, vec2},
     graphics::{Canvas, Color, FilterMode, GraphicsContext, Image, Sampler},
     input::gamepad::gilrs::Filter,
 };
@@ -40,11 +40,19 @@ impl Visualizer {
                     + ((image.height() - 1) as f32 * 0.25 * self.image_scale) * (x + y) as f32;
                 let draw_param = ggez::graphics::DrawParam::new()
                     .dest(Vec2::new(image_x, image_y))
-                    .scale(Vec2::new(4.0, 4.0));
+                    .scale(vec2(self.image_scale, self.image_scale));
                 canvas.draw(image, draw_param);
             });
         });
         canvas.finish(gfx)?;
         Ok(())
+    }
+
+    pub fn add_scale(&mut self, scale: f32) {
+        self.image_scale += scale * 0.1;
+    }
+
+    pub fn add_offset(&mut self, offset: Vec2) {
+        self.origin += offset;
     }
 }
