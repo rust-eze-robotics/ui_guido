@@ -1,14 +1,13 @@
-use ggez::glam::{Vec2, vec2};
+use ggez::glam::{vec2, Vec2};
 
 pub struct GamePad {
     offset_leftstick_x: f32,
     offset_leftstick_y: f32,
     offset_rightstick_x: f32,
-    offset_rightstick_y: f32
+    offset_rightstick_y: f32,
 }
 
 impl GamePad {
-
     pub fn new() -> Self {
         Self {
             offset_leftstick_x: 0.0,

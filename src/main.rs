@@ -1,7 +1,8 @@
 use std::{env, path::PathBuf};
 
+use gamepad::GamePad;
 use ggez::{
-    event::{EventHandler, Axis},
+    event::{Axis, EventHandler},
     glam::vec2,
     graphics::{Canvas, Color, DrawParam, FilterMode, Image, Rect, Sampler},
 };
@@ -10,17 +11,15 @@ use midgard::{
     world_visualizer::WorldVisualizer,
 };
 use visualizer::Visualizer;
-use gamepad::GamePad;
 
 use robotics_lib::world::{tile::Tile, world_generator::Generator};
 
+mod gamepad;
 mod textures;
 mod visualizer;
-mod gamepad;
 
 struct State {
     map: Vec<Vec<Tile>>,
-    map_images: Vec<Vec<Image>>,
     // image_scale: f32,
     visualizer: Visualizer,
     gamepad: GamePad,
@@ -28,8 +27,10 @@ struct State {
 
 impl EventHandler for State {
     fn update(&mut self, _ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
-        self.visualizer.add_offset(self.gamepad.get_leftstick_offset());
-        self.visualizer.add_scale(self.gamepad.get_rightstick_offset().y);
+        self.visualizer
+            .add_offset(self.gamepad.get_leftstick_offset());
+        self.visualizer
+            .add_scale(self.gamepad.get_rightstick_offset().y);
         Ok(())
     }
 
@@ -54,7 +55,7 @@ impl EventHandler for State {
     //     input: ggez::input::keyboard::KeyInput,
     //     _repeated: bool,
     // ) -> Result<(), ggez::GameError> {
-    //     
+    //
     //     Ok(())
     // }
 
@@ -67,17 +68,14 @@ impl EventHandler for State {
     ) -> Result<(), ggez::GameError> {
         if axis == Axis::LeftStickY {
             self.gamepad.set_leftstick_y_offset(value);
-        }
-        else if axis == Axis::LeftStickX {
+        } else if axis == Axis::LeftStickX {
             self.gamepad.set_leftstick_x_offset(value);
-        }
-        else if axis == Axis::RightStickY {
+        } else if axis == Axis::RightStickY {
             self.gamepad.set_rightstick_y_offset(value);
         }
         Ok(())
     }
 }
-
 
 fn main() {
     let (ctx, event_loop) = ggez::ContextBuilder::new("robotics", "ggez")
@@ -95,7 +93,7 @@ fn main() {
         .unwrap();
 
     let params = WorldGeneratorParameters {
-        world_size: 40,
+        world_size: 200,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
@@ -119,13 +117,8 @@ fn main() {
 
     let state = State {
         map: map.clone(),
-        map_images: textures::load_tiles_matrix_textures(&ctx, &map),
-        visualizer: Visualizer::new(
-            textures::load_tiles_matrix_textures(&ctx, &map),
-            vec2(20.0, 10.0),
-            4.0,
-        ),
-        gamepad: GamePad::new()
+        visualizer: Visualizer::new(&ctx, &map, vec2(20.0, 10.0), 4.0),
+        gamepad: GamePad::new(),
     };
 
     ggez::event::run(ctx, event_loop, state);
