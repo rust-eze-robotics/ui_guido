@@ -5,6 +5,7 @@ use ggez::{
     glam::{vec2, Vec2},
     graphics::{Canvas, Color, FilterMode, GraphicsContext, InstanceArray, Sampler},
 };
+use ggez::Context;
 use robotics_lib::world::tile::Tile;
 
 use crate::textures::Texture;
@@ -102,8 +103,22 @@ impl Visualizer {
         Ok(())
     }
 
-    pub fn add_scale(&mut self, scale: f32) {
-        self.image_scale += scale * 0.1;
+    pub fn add_scale(&mut self, gfx: &impl Has<GraphicsContext>, scale: f32) {
+
+        if self.image_scale + scale * 0.01 > 0.5 
+            && self.image_scale + scale * 0.01 < 4.0 {
+
+            let screen_width = gfx.retrieve().window().inner_size().width as f32;
+            let screen_height = gfx.retrieve().window().inner_size().height as f32;
+
+            let offset_x = (screen_width * 0.5 - self.origin.x) / (16.0 * self.map_size.x as f32 * self.image_scale);
+            let offset_y = (screen_height * 0.5 - self.origin.y) / (8.0 * self.map_size.y as f32 * self.image_scale);
+
+            self.origin.x -= self.map_size.x * scale * 0.01 * 16.0 * offset_x;
+            self.origin.y -= self.map_size.y * scale * 0.01 * 8.0 * offset_y;
+
+            self.image_scale += scale * 0.01;
+        }
     }
 
     pub fn add_offset(&mut self, offset: Vec2) {

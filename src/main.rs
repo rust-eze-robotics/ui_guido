@@ -26,11 +26,12 @@ struct State {
 }
 
 impl EventHandler for State {
-    fn update(&mut self, _ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+        while ctx.time.check_update_time(10) {}
         self.visualizer
             .add_offset(self.gamepad.get_leftstick_offset());
         self.visualizer
-            .add_scale(self.gamepad.get_rightstick_offset().y);
+            .add_scale(ctx, self.gamepad.get_rightstick_offset().y);
         Ok(())
     }
 
