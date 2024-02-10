@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::HashMap;
 
 use ggez::Context;
@@ -121,7 +122,7 @@ impl Visualizer {
     }
 
     pub fn add_scale(&mut self, gfx: &impl Has<GraphicsContext>, scale: f32) {
-        if self.image_scale + scale * 0.01 > 0.5 && self.image_scale + scale * 0.01 < 4.0 {
+        if self.image_scale + scale * 0.01 > 1.0 && self.image_scale + scale * 0.01 < 4.0 {
             let screen_width = gfx.retrieve().window().inner_size().width as f32;
             let screen_height = gfx.retrieve().window().inner_size().height as f32;
 
@@ -139,5 +140,20 @@ impl Visualizer {
 
     pub fn add_offset(&mut self, offset: Vec2) {
         self.origin += offset;
+    }
+
+    pub fn set_center(&mut self, gfx: &impl Has<GraphicsContext>, tile_center: Vec2) {
+
+        let x = tile_center.x; 
+        let y = tile_center.y;
+
+        let screen_width = gfx.retrieve().window().inner_size().width as f32;
+        let screen_height = gfx.retrieve().window().inner_size().height as f32;
+
+        let image_x = (self.map_size.y - y + x) * 16.0 * self.image_scale / 2.0;
+        let image_y = 3.75 * self.image_scale * (x + y) as f32;
+
+        self.origin.x = -image_x + (screen_width - 16.0 * self.image_scale) * 0.5;
+        self.origin.y = -image_y + (screen_height - 4.0 * self.image_scale) * 0.5;
     }
 }

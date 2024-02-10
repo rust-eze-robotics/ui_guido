@@ -93,7 +93,7 @@ fn main() {
         .unwrap();
 
     let params = WorldGeneratorParameters {
-        world_size: 1024,
+        world_size: 256,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
@@ -115,11 +115,13 @@ fn main() {
     //     image_scale: 4.0
     // };
 
-    let state = State {
+    let mut state = State {
         map: map.clone(),
         visualizer: Visualizer::new(&ctx, &map, vec2(20.0, 10.0), 4.0),
         gamepad: GamePad::new(),
     };
+
+    state.visualizer.set_center(&ctx, vec2(0.0, 0.0));
 
     ggez::event::run(ctx, event_loop, state);
 }
