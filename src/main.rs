@@ -27,7 +27,6 @@ struct State {
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
-        while ctx.time.check_update_time(10) {}
         self.visualizer
             .add_offset(self.gamepad.get_leftstick_offset());
         self.visualizer
@@ -94,7 +93,7 @@ fn main() {
         .unwrap();
 
     let params = WorldGeneratorParameters {
-        world_size: 200,
+        world_size: 1024,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
