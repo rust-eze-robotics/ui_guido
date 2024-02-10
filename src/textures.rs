@@ -28,6 +28,15 @@ pub enum Texture {
     ShallowWaterHalf,
     TeleportBlock,
     TeleportHalf,
+    Fish,
+    Tree,
+    Rock,
+    Fire,
+    Garbage,
+    Coin,
+    Bin,
+    Crate,
+    Market,
 }
 
 impl Texture {
@@ -139,6 +148,15 @@ impl Texture {
             Texture::ShallowWaterHalf => Image::from_path(gfx, "/halfs/shallowwater.png").unwrap(),
             Texture::TeleportBlock => Image::from_path(gfx, "/blocks/teleport.png").unwrap(),
             Texture::TeleportHalf => Image::from_path(gfx, "/halfs/teleport.png").unwrap(),
+            Texture::Fish => Image::from_path(gfx, "/contents/fish.png").unwrap(),
+            Texture::Tree => Image::from_path(gfx, "/contents/tree.png").unwrap(),
+            Texture::Rock => Image::from_path(gfx, "/contents/rock.png").unwrap(),
+            Texture::Fire => Image::from_path(gfx, "/contents/fire.png").unwrap(),
+            Texture::Garbage => Image::from_path(gfx, "/contents/garbage.png").unwrap(),
+            Texture::Coin => Image::from_path(gfx, "/contents/coin.png").unwrap(),
+            Texture::Bin => Image::from_path(gfx, "/contents/bin.png").unwrap(),
+            Texture::Crate => Image::from_path(gfx, "/contents/crate.png").unwrap(),
+            Texture::Market => Image::from_path(gfx, "/contents/market.png").unwrap(),
         }
     }
 
