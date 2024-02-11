@@ -21,6 +21,7 @@ pub struct Visualizer {
     map_size: Vec2,
     resources_instances: HashMap<Texture, InstanceArrayCoordinated>,
     instances: Vec<HashMap<Texture, InstanceArray>>,
+    contents_instances: HashMap<Texture, InstanceArray>,
     origin: Vec2,
     image_scale: f32,
 }
@@ -33,6 +34,7 @@ impl Visualizer {
         image_scale: f32,
     ) -> Self {
         let mut instances: Vec<HashMap<Texture, InstanceArray>> = Vec::new();
+        let mut contents_instances = HashMap::new();
 
         let mut diagonals = Vec::new();
 
@@ -53,6 +55,7 @@ impl Visualizer {
             let mut diagonal_instances = HashMap::new();
             diagonal.iter().for_each(|(x, y)| {
                 let texture = Texture::from_tile(&map[*y][*x]);
+                let content_texture = Texture::from_content(&map[*y][*x].content);
 
                 let image_x = (texture.width() * 0.5) * (map.len() - y + x - 1) as f32;
                 let image_y = ((texture.height() - 1.0) * 0.25) * (x + y) as f32;
@@ -69,6 +72,25 @@ impl Visualizer {
                     ggez::graphics::DrawParam::new()
                         .dest(Vec2::new(image_x, image_y))
                 );
+
+                if let Some(content_texture) = content_texture {
+                    let image = content_texture.get_image(gfx);
+                    let instance = contents_instances.entry(content_texture).or_insert_with(|| {
+                        InstanceArray::new(gfx, image)
+                    });
+
+                    let offset_y = if map[*y][*x].elevation < 3 {
+                        2.0 
+                    }
+                    else {
+                        6.0
+                    };
+
+                    instance.push(
+                        ggez::graphics::DrawParam::new()
+                            .dest(Vec2::new(image_x, image_y - offset_y))
+                    );
+                }
             });
             instances.push(diagonal_instances);
         });
@@ -77,6 +99,7 @@ impl Visualizer {
             map_size: vec2(map.len() as f32, map.len() as f32),
             resources_instances: HashMap::new(),
             instances,
+            contents_instances,
             origin,
             image_scale,
         }
@@ -112,6 +135,15 @@ impl Visualizer {
                                 .scale(vec2(self.image_scale, self.image_scale)));
                         }
                     });
+            });
+
+        self.contents_instances
+            .iter()
+            .for_each(|(_, instance)| {
+                if instance.capacity() > 0 {
+                    canvas.draw(instance, ggez::graphics::DrawParam::new()
+                        .scale(vec2(self.image_scale, self.image_scale)));
+                }
             });
 
         canvas.finish(&mut ctx.gfx)?;

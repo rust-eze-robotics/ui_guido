@@ -2,7 +2,7 @@ use ggez::{
     context::Has,
     graphics::{GraphicsContext, Image},
 };
-use robotics_lib::world::tile::{Tile, TileType};
+use robotics_lib::world::tile::{Tile, TileType, Content};
 
 #[derive(Hash, Eq, PartialEq, Clone, Copy, Debug)]
 pub enum Texture {
@@ -119,6 +119,22 @@ impl Texture {
                     Texture::TeleportBlock
                 }
             }
+        }
+    }
+
+    pub fn from_content(content: &Content) -> Option<Self> {
+        match content {
+            Content::None => None,
+            Content::Fish(_) => Some(Texture::Fish),
+            Content::Tree(_) => Some(Texture::Tree),
+            Content::Rock(_) => Some(Texture::Rock),
+            Content::Fire => Some(Texture::Fire),
+            Content::Garbage(_) => Some(Texture::Garbage),
+            Content::Coin(_) => Some(Texture::Coin),
+            Content::Bin(_) => Some(Texture::Bin),
+            Content::Crate(_) => Some(Texture::Crate),
+            Content::Market(_) => Some(Texture::Market),
+            _ => None
         }
     }
 
