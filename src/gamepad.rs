@@ -18,7 +18,7 @@ impl GamePad {
     }
 
     pub fn set_leftstick_x_offset(&mut self, offset_leftstick_x: f32) {
-        self.offset_leftstick_x = -offset_leftstick_x * 5.0;
+        self.offset_leftstick_x = offset_leftstick_x * 5.0;
     }
 
     pub fn set_leftstick_y_offset(&mut self, offset_leftstick_y: f32) {

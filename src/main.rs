@@ -26,7 +26,16 @@ struct State {
 }
 
 impl EventHandler for State {
-    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {   
+        let screen_width = ctx.gfx.window().inner_size().width as f32;
+        let screen_height = ctx.gfx.window().inner_size().height as f32;
+        if ctx.time.ticks() % 100 == 0 {
+            println!("Delta frame time: {:?} ", ctx.time.delta());
+            println!("Average FPS: {}", ctx.time.fps());
+            println!("Origin: {:?}", self.visualizer.origin());
+            println!("Scale: {:?}", self.visualizer.scale());
+            println!("Screen: {:?}", vec2(screen_width, screen_height));
+        }
         self.visualizer
             .add_offset(self.gamepad.get_leftstick_offset());
         self.visualizer
@@ -79,7 +88,10 @@ impl EventHandler for State {
 
 fn main() {
     let (ctx, event_loop) = ggez::ContextBuilder::new("robotics", "ggez")
-        .window_setup(ggez::conf::WindowSetup::default().title("Robotics"))
+        .window_setup(ggez::conf::WindowSetup::default()
+            .title("Robotics")
+            .vsync(true)
+        )
         .window_mode(ggez::conf::WindowMode::default().dimensions(1600.0, 1200.0))
         .add_resource_path(match env::var("CARGO_MANIFEST_DIR") {
             Ok(manifest_dir) => {
@@ -93,7 +105,7 @@ fn main() {
         .unwrap();
 
     let params = WorldGeneratorParameters {
-        world_size: 256,
+        world_size: 200,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
@@ -117,11 +129,12 @@ fn main() {
 
     let mut state = State {
         map: map.clone(),
-        visualizer: Visualizer::new(&ctx, &map, vec2(20.0, 10.0), 4.0),
+        visualizer: Visualizer::new(&ctx, &map, vec2(0.0, 0.0), 4.0),
         gamepad: GamePad::new(),
     };
 
-    state.visualizer.set_center(&ctx, vec2(0.0, 0.0));
+    // state.visualizer.set_center(&ctx, vec2(0.0, 0.0));
+    state.visualizer.set_center(&ctx, vec2(0.0, (map.len() / 2) as f32));
 
     ggez::event::run(ctx, event_loop, state);
 }
