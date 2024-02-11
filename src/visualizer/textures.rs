@@ -2,7 +2,7 @@ use ggez::{
     context::Has,
     graphics::{GraphicsContext, Image},
 };
-use robotics_lib::world::tile::{Tile, TileType, Content};
+use robotics_lib::world::tile::{Content, Tile, TileType};
 
 #[derive(Hash, Eq, PartialEq, Clone, Copy, Debug)]
 pub enum Texture {
@@ -134,7 +134,7 @@ impl Texture {
             Content::Bin(_) => Some(Texture::Bin),
             Content::Crate(_) => Some(Texture::Crate),
             Content::Market(_) => Some(Texture::Market),
-            _ => None
+            _ => None,
         }
     }
 
@@ -184,4 +184,3 @@ impl Texture {
         16.0
     }
 }
-

@@ -4,7 +4,6 @@ use gamepad::GamePad;
 use ggez::{
     event::{Axis, EventHandler},
     glam::vec2,
-    graphics::{Canvas, Color, DrawParam, FilterMode, Image, Rect, Sampler},
 };
 use midgard::{
     world_generator::{WorldGenerator, WorldGeneratorParameters},
@@ -12,11 +11,13 @@ use midgard::{
 };
 use visualizer::Visualizer;
 
-use robotics_lib::world::{tile::Tile, world_generator::Generator};
+use robotics_lib::{
+    runner::Robot,
+    world::{tile::Tile, world_generator::Generator},
+};
 
 mod gamepad;
-mod textures;
-mod visualizer;
+pub mod visualizer;
 
 struct State {
     map: Vec<Vec<Tile>>,
@@ -26,7 +27,7 @@ struct State {
 }
 
 impl EventHandler for State {
-    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {   
+    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
         let screen_width = ctx.gfx.window().inner_size().width as f32;
         let screen_height = ctx.gfx.window().inner_size().height as f32;
         if ctx.time.ticks() % 100 == 0 {
@@ -88,9 +89,10 @@ impl EventHandler for State {
 
 fn main() {
     let (ctx, event_loop) = ggez::ContextBuilder::new("robotics", "ggez")
-        .window_setup(ggez::conf::WindowSetup::default()
-            .title("Robotics")
-            .vsync(true)
+        .window_setup(
+            ggez::conf::WindowSetup::default()
+                .title("Robotics")
+                .vsync(true),
         )
         .window_mode(ggez::conf::WindowMode::default().dimensions(1600.0, 1200.0))
         .add_resource_path(match env::var("CARGO_MANIFEST_DIR") {
@@ -134,7 +136,9 @@ fn main() {
     };
 
     // state.visualizer.set_center(&ctx, vec2(0.0, 0.0));
-    state.visualizer.set_center(&ctx, vec2(0.0, (map.len() / 2) as f32));
+    state
+        .visualizer
+        .set_center(&ctx, vec2(0.0, (map.len() / 2) as f32));
 
     ggez::event::run(ctx, event_loop, state);
 }
