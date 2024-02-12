@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use ggez::{
     context::Has,
     glam::vec2,
-    graphics::{DrawParam, GraphicsContext, InstanceArray},
+    graphics::{DrawParam, GraphicsContext, InstanceArray, Color},
 };
 use robotics_lib::world::tile::Tile;
 
@@ -20,9 +20,11 @@ struct ContentInstance {
     elements: Vec<(usize, usize)>,
 }
 
-pub struct ContentsMapComponentParam {
+pub(crate) struct ContentsMapComponentParam {
     pub scale: f32,
 }
+
+pub(crate) struct ContentsMapComponentUpdateParam; 
 
 impl ContentsMapComponent {
     pub fn from_map(gfx: &impl Has<GraphicsContext>, map: &Vec<Vec<Tile>>) -> Self {
@@ -40,7 +42,10 @@ impl ContentsMapComponent {
                         elements: Vec::new(),
                     });
 
-                    instance.array.push(DrawParam::new().dest(vec2(image_x, image_y - offset_y)));
+                    instance.array.push(DrawParam::new()
+                        .dest(vec2(image_x, image_y - offset_y))
+                        .color(Color::from_rgba(0, 0, 0, 127))
+                    );
                     instance.elements.push((x, y));
                 }
             });
@@ -50,7 +55,7 @@ impl ContentsMapComponent {
     }
 }
 
-impl Component<ContentsMapComponentParam> for ContentsMapComponent {
+impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam> for ContentsMapComponent {
     fn draw(
         &self,
         canvas: &mut ggez::graphics::Canvas,

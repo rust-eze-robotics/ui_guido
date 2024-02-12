@@ -3,13 +3,16 @@ use ggez::{
     Context,
 };
 
-
 pub(super) mod contents_map;
 pub(super) mod tails_map;
 pub(super) mod player;
 
-pub(crate) trait Component<ComponentParam> {
-    fn update(&mut self, _ctx: &mut Context) -> Result<(), ggez::GameError> {
+pub(crate) trait Component<ComponentParam, UpdateParam> {
+
+    fn update(
+        &mut self,
+        update_param: UpdateParam
+    ) -> Result<(), ggez::GameError> {
         Ok(())
     }
 

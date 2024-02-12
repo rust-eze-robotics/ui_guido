@@ -1,6 +1,9 @@
 mod components;
 mod textures;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use ggez::graphics::{DrawParam, Rect};
 use ggez::Context;
 use ggez::{
@@ -14,11 +17,12 @@ use robotics_lib::world::tile::Tile;
 
 use self::components::contents_map::{ContentsMapComponent, ContentsMapComponentParam};
 use self::components::player::{PlayerComponent, PlayerComponentParam};
-use self::components::tails_map::{TilesMapComponentParam, TilesMapComponent};
+use self::components::tails_map::{TilesMapComponentParam, TilesMapComponent, TilesMapComponentUpdateParam};
 use self::components::Component;
 
 pub struct Visualizer {
     runner: Runner,
+    world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
     map_size: Vec2,
     origin: Vec2,
     scale: f32,
@@ -30,17 +34,19 @@ pub struct Visualizer {
 impl Visualizer {
     pub fn new(
         gfx: &impl Has<GraphicsContext>,
+        world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
         runner: Runner,
         map: &Vec<Vec<Tile>>,
         origin: Vec2,
         scale: f32,
     ) -> Self {
 
-        let tiles_map_component = TilesMapComponent::from_map(gfx, map);
+        let tiles_map_component = TilesMapComponent::from_map(gfx, map.clone());
         let contents_map_component = ContentsMapComponent::from_map(gfx, map);
         let player_component = PlayerComponent::new(gfx);
 
         Self {
+            world,
             runner,
             map_size: vec2(map.len() as f32, map.len() as f32),
             origin,
@@ -137,7 +143,14 @@ impl Visualizer {
     }
 
     pub fn next_tick(&mut self) -> Result<(), LibError>  {
-        self.runner.game_tick()
+        self.runner.game_tick();
+        self.tiles_map_component.update(
+            TilesMapComponentUpdateParam {
+                last_map: self.world.borrow().clone().unwrap(),
+            }
+        );
+
+        Ok(())
     }
 
     pub fn runner(&self) -> &Runner {

@@ -176,7 +176,36 @@ impl Texture {
             Texture::Market => Image::from_path(gfx, "/contents/market.png").unwrap(),
             Texture::Player => Image::from_path(gfx, "/player/robot.png").unwrap(),
         }
+
     }
+
+    pub fn get_blocks() -> Vec<Self> {
+        vec![
+            Self::SandBlock,
+            Self::SandHalf,
+            Self::HillBlock,
+            Self::HillHalf,
+            Self::SnowBlock,
+            Self::SnowHalf,
+            Self::LavaBlock,
+            Self::LavaHalf,
+            Self::WallBlock,
+            Self::WallHalf,
+            Self::GrassBlock,
+            Self::GrassHalf,
+            Self::StreetBlock,
+            Self::StreetHalf,
+            Self::MountainBlock,
+            Self::MountainHalf,
+            Self::DeepWaterBlock,
+            Self::DeepWaterHalf,
+            Self::ShallowWaterBlock,
+            Self::ShallowWaterHalf,
+            Self::TeleportBlock,
+            Self::TeleportHalf,
+        ]
+    }
+
 
     pub fn width(&self) -> f32 {
         16.0

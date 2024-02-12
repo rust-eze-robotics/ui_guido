@@ -1,3 +1,4 @@
+
 pub(crate) use ggez::graphics::Image;
 pub(crate) use ggez::context::Has;
 pub(crate) use ggez::graphics::GraphicsContext;
@@ -11,8 +12,10 @@ pub(crate) struct PlayerComponent {
 }
 
 pub(crate) struct PlayerComponentParam;
+pub(crate) struct PlayerComponentUpdateParam;
 
 impl PlayerComponent {
+
     pub(crate) fn new(gfx: &impl Has<GraphicsContext>) -> Self {
         Self { 
             image: Texture::Player.get_image(gfx)
@@ -24,7 +27,7 @@ impl PlayerComponent {
     }
 }
 
-impl Component<PlayerComponentParam> for PlayerComponent {
+impl Component<PlayerComponentParam, PlayerComponentUpdateParam> for PlayerComponent {
     fn draw(
         &self,
         canvas: &mut ggez::graphics::Canvas,
