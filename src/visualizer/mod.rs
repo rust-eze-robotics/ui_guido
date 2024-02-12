@@ -21,7 +21,7 @@ pub struct Visualizer {
     runner: Runner,
     map_size: Vec2,
     origin: Vec2,
-    image_scale: f32,
+    scale: f32,
     tiles_map_component: TilesMapComponent,
     contents_map_component: ContentsMapComponent,
     player_component: PlayerComponent,
@@ -33,7 +33,7 @@ impl Visualizer {
         runner: Runner,
         map: &Vec<Vec<Tile>>,
         origin: Vec2,
-        image_scale: f32,
+        scale: f32,
     ) -> Self {
 
         let tiles_map_component = TilesMapComponent::from_map(gfx, map);
@@ -44,7 +44,7 @@ impl Visualizer {
             runner,
             map_size: vec2(map.len() as f32, map.len() as f32),
             origin,
-            image_scale,
+            scale,
             tiles_map_component,
             contents_map_component,
             player_component,
@@ -76,7 +76,7 @@ impl Visualizer {
                         ctx.gfx.window().inner_size().width as f32,
                         ctx.gfx.window().inner_size().height as f32,
                     ),
-                    self.image_scale,
+                    self.scale,
                 ),
             )
             .unwrap();
@@ -85,7 +85,7 @@ impl Visualizer {
             .draw(
                 &mut canvas,
                 DrawParam::new(),
-                ContentsMapComponentParam::new(self.image_scale),
+                ContentsMapComponentParam::new(self.scale),
             )
             .unwrap();
 
@@ -97,8 +97,8 @@ impl Visualizer {
             .draw(
                 &mut canvas,
                 DrawParam::new()
-                    .dest(vec2(player_x, player_y + 2.0) * self.image_scale)
-                    .scale(vec2(self.image_scale, self.image_scale)),
+                    .dest(vec2(player_x, player_y + 2.0) * self.scale)
+                    .scale(vec2(self.scale, self.scale)),
                 PlayerComponentParam,
             )
             .unwrap();
@@ -108,12 +108,12 @@ impl Visualizer {
     }
 
     pub fn add_scale(&mut self, _gfx: &impl Has<GraphicsContext>, scale: f32) {
-        if self.image_scale + scale * 0.01 > 1.0 && self.image_scale + scale * 0.01 < 4.0 {
+        if self.scale + scale * 0.01 > 1.0 && self.scale + scale * 0.01 < 4.0 {
 
             self.origin.x += scale * 0.5 * 0.01;
             self.origin.y += scale * 0.5 * 0.01;
 
-            self.image_scale += scale * 0.01;
+            self.scale += scale * 0.01;
         }
     }
 
@@ -132,8 +132,8 @@ impl Visualizer {
         let image_x = (16.0 * 0.5) * (self.map_size.y - y + x - 1.0) as f32;
         let image_y = 3.75 * (x + y - 1.0) as f32;
 
-        self.origin.x = -image_x - screen_width * 0.5 + 16.0 * 0.5 * self.image_scale;
-        self.origin.y = -image_y - screen_height * 0.5 + 4.0 * 0.5 * self.image_scale;
+        self.origin.x = -image_x - screen_width * 0.5 + 16.0 * 0.5 * self.scale;
+        self.origin.y = -image_y - screen_height * 0.5 + 4.0 * 0.5 * self.scale;
     }
 
     pub fn next_tick(&mut self) -> Result<(), LibError>  {
@@ -149,6 +149,6 @@ impl Visualizer {
     }
 
     pub fn scale(&self) -> f32 {
-        self.image_scale
+        self.scale
     }
 }
