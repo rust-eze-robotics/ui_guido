@@ -6,6 +6,7 @@ use ggez::{
 
 pub(super) mod contents_map;
 pub(super) mod tails_map;
+pub(super) mod player;
 
 pub(crate) trait Component<ComponentParam> {
     fn update(&mut self, _ctx: &mut Context) -> Result<(), ggez::GameError> {

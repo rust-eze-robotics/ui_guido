@@ -8,23 +8,29 @@ use ggez::{
     glam::{vec2, Vec2},
     graphics::{Canvas, Color, FilterMode, GraphicsContext, Sampler},
 };
+use robotics_lib::runner::Runner;
+use robotics_lib::utils::LibError;
 use robotics_lib::world::tile::Tile;
 
 use self::components::contents_map::{ContentsMapComponent, ContentsMapComponentParam};
+use self::components::player::{PlayerComponent, PlayerComponentParam};
 use self::components::tails_map::{TilesMapComponentParam, TilesMapComponent};
 use self::components::Component;
 
 pub struct Visualizer {
+    runner: Runner,
     map_size: Vec2,
     origin: Vec2,
     image_scale: f32,
     tiles_map_component: TilesMapComponent,
     contents_map_component: ContentsMapComponent,
+    player_component: PlayerComponent,
 }
 
 impl Visualizer {
     pub fn new(
         gfx: &impl Has<GraphicsContext>,
+        runner: Runner,
         map: &Vec<Vec<Tile>>,
         origin: Vec2,
         image_scale: f32,
@@ -32,13 +38,16 @@ impl Visualizer {
 
         let tiles_map_component = TilesMapComponent::from_map(gfx, map);
         let contents_map_component = ContentsMapComponent::from_map(gfx, map);
+        let player_component = PlayerComponent::new(gfx);
 
         Self {
+            runner,
             map_size: vec2(map.len() as f32, map.len() as f32),
             origin,
             image_scale,
             tiles_map_component,
-            contents_map_component
+            contents_map_component,
+            player_component,
         }
     }
 
@@ -80,14 +89,26 @@ impl Visualizer {
             )
             .unwrap();
 
+        let x = self.runner().get_robot().get_coordinate().get_col();
+        let y = self.runner().get_robot().get_coordinate().get_row();
+        let player_x = (PlayerComponent::texture().width() * 0.5) * (self.map_size.y as usize - y + x - 1) as f32;
+        let player_y = ((PlayerComponent::texture().height() - 1.0) * 0.25) * (x + y) as f32;
+        self.player_component
+            .draw(
+                &mut canvas,
+                DrawParam::new()
+                    .dest(vec2(player_x, player_y + 2.0) * self.image_scale)
+                    .scale(vec2(self.image_scale, self.image_scale)),
+                PlayerComponentParam,
+            )
+            .unwrap();
+
         canvas.finish(&mut ctx.gfx)?;
         Ok(())
     }
 
     pub fn add_scale(&mut self, _gfx: &impl Has<GraphicsContext>, scale: f32) {
         if self.image_scale + scale * 0.01 > 1.0 && self.image_scale + scale * 0.01 < 4.0 {
-            // let screen_width = gfx.retrieve().window().inner_size().width as f32;
-            // let screen_height = gfx.retrieve().window().inner_size().height as f32;
 
             self.origin.x += scale * 0.5 * 0.01;
             self.origin.y += scale * 0.5 * 0.01;
@@ -113,6 +134,14 @@ impl Visualizer {
 
         self.origin.x = -image_x - screen_width * 0.5 + 16.0 * 0.5 * self.image_scale;
         self.origin.y = -image_y - screen_height * 0.5 + 4.0 * 0.5 * self.image_scale;
+    }
+
+    pub fn next_tick(&mut self) -> Result<(), LibError>  {
+        self.runner.game_tick()
+    }
+
+    pub fn runner(&self) -> &Runner {
+        &self.runner
     }
 
     pub fn origin(&self) -> Vec2 {

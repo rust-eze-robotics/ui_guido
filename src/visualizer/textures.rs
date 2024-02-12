@@ -37,6 +37,7 @@ pub enum Texture {
     Bin,
     Crate,
     Market,
+    Player,
 }
 
 impl Texture {
@@ -173,6 +174,7 @@ impl Texture {
             Texture::Bin => Image::from_path(gfx, "/contents/bin.png").unwrap(),
             Texture::Crate => Image::from_path(gfx, "/contents/crate.png").unwrap(),
             Texture::Market => Image::from_path(gfx, "/contents/market.png").unwrap(),
+            Texture::Player => Image::from_path(gfx, "/player/robot.png").unwrap(),
         }
     }
 

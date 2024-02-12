@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, rc::Rc, cell::RefCell};
 
 use gamepad::GamePad;
 use ggez::{
@@ -7,13 +7,12 @@ use ggez::{
 };
 use midgard::{
     world_generator::{WorldGenerator, WorldGeneratorParameters},
-    world_visualizer::WorldVisualizer,
 };
 use visualizer::Visualizer;
 
 use robotics_lib::{
-    runner::Robot,
-    world::{tile::Tile, world_generator::Generator},
+    runner::{Robot, Runnable, backpack::BackPack, Runner},
+    world::{tile::Tile, world_generator::{Generator}, coordinates::Coordinate, World}, interface::{go, Direction, robot_view}, event::events::Event, energy::Energy,
 };
 
 mod gamepad;
@@ -31,6 +30,8 @@ impl EventHandler for State {
         let screen_width = ctx.gfx.window().inner_size().width as f32;
         let screen_height = ctx.gfx.window().inner_size().height as f32;
         if ctx.time.ticks() % 100 == 0 {
+            self.visualizer.next_tick();
+            println!("Robot: {:?}", self.visualizer.runner().get_robot().get_coordinate());
             println!("Delta frame time: {:?} ", ctx.time.delta());
             println!("Average FPS: {}", ctx.time.fps());
             println!("Origin: {:?}", self.visualizer.origin());
@@ -41,6 +42,7 @@ impl EventHandler for State {
             .add_offset(self.gamepad.get_leftstick_offset());
         self.visualizer
             .add_scale(ctx, self.gamepad.get_rightstick_offset().y);
+
         Ok(())
     }
 
@@ -87,6 +89,42 @@ impl EventHandler for State {
     }
 }
 
+struct MyRobot {
+    robot: Robot,
+}
+
+impl Runnable for MyRobot {
+    fn process_tick(&mut self, world: &mut robotics_lib::world::World) {
+        go(self, world, Direction::Right);
+        go(self, world, Direction::Down);
+
+        println!("Robot: {:?}", self.robot.coordinate);
+    }
+
+    fn handle_event(&mut self, _event: Event) {}
+
+    fn get_energy(&self) -> &Energy {
+        &self.robot.energy
+    }
+    fn get_energy_mut(&mut self) -> &mut Energy {
+        &mut self.robot.energy
+    }
+
+    fn get_coordinate(&self) -> &Coordinate {
+        &self.robot.coordinate
+    }
+    fn get_coordinate_mut(&mut self) -> &mut Coordinate {
+        &mut self.robot.coordinate
+    }
+
+    fn get_backpack(&self) -> &BackPack {
+        &self.robot.backpack
+    }
+    fn get_backpack_mut(&mut self) -> &mut BackPack {
+        &mut self.robot.backpack
+    }
+}
+
 fn main() {
     let (ctx, event_loop) = ggez::ContextBuilder::new("robotics", "ggez")
         .window_setup(
@@ -128,10 +166,20 @@ fn main() {
     //     map,
     //     image_scale: 4.0
     // };
+    //
+    //
+    //
+
+    let robot = Rc::new(RefCell::new(MyRobot {
+        robot: Robot::new(),
+    }));
+
+
+    let runner = Runner::new(Box::new(MyRobot{ robot: Robot::new() }), &mut world_generator).unwrap();
 
     let mut state = State {
         map: map.clone(),
-        visualizer: Visualizer::new(&ctx, &map, vec2(0.0, 0.0), 4.0),
+        visualizer: Visualizer::new(&ctx, runner, &map, vec2(0.0, 0.0), 4.0),
         gamepad: GamePad::new(),
     };
 
