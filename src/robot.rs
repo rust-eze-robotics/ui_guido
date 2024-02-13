@@ -43,8 +43,7 @@ impl Runnable for MyRobot {
             None,
             Some(rust_eze_tomtom::plain::PlainContent::Bush),
         );
-        // go(self, world, Direction::Right);
-        // go(self, world, Direction::Down);
+        // go(self, world, Direction::Left);
 
         self.world.replace(Some(robot_map(world).unwrap()));
     }

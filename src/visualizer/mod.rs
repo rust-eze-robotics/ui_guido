@@ -19,7 +19,7 @@ use robotics_lib::world::tile::Tile;
 use self::components::contents_map::{
     ContentsMapComponent, ContentsMapComponentParam, ContentsMapComponentUpdateParam,
 };
-use self::components::player::{PlayerComponent, PlayerComponentParam};
+use self::components::player::{PlayerComponent, PlayerComponentParam, PlayerComponentUpdateParam};
 use self::components::tails_map::{
     TilesMapComponent, TilesMapComponentParam, TilesMapComponentUpdateParam,
 };
@@ -46,20 +46,21 @@ impl Visualizer {
         runner: Runner,
         map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
         origin: Vec2,
+        initial_position: (usize, usize),
         scale: f32,
     ) -> Self {
+        let map_len = map_rc.clone().borrow().len();
+
         let tiles_map_component = TilesMapComponent::from_map(gfx, map_rc.clone());
         let contents_map_component = ContentsMapComponent::from_map(gfx, map_rc.clone());
-        let player_component = PlayerComponent::new(gfx);
-
-        let map_len = map_rc.clone().borrow().len() as f32;
+        let player_component = PlayerComponent::new(gfx, initial_position, (map_len, map_len));
 
         Self {
             world,
             event_queue,
             runner,
             map_rc,
-            map_size: vec2(map_len, map_len),
+            map_size: vec2(map_len as f32, map_len as f32),
             origin,
             scale,
             tiles_map_component,
@@ -106,18 +107,16 @@ impl Visualizer {
             )
             .unwrap();
 
-        let x = self.runner().get_robot().get_coordinate().get_col();
-        let y = self.runner().get_robot().get_coordinate().get_row();
-        let player_x = (PlayerComponent::texture().width() * 0.5)
-            * (self.map_size.y as usize - y + x - 1) as f32;
-        let player_y = ((PlayerComponent::texture().height() - 1.0) * 0.25) * (x + y) as f32;
+        // let x = self.runner().get_robot().get_coordinate().get_col();
+        // let y = self.runner().get_robot().get_coordinate().get_row();
+        // let player_x = (PlayerComponent::texture().width() * 0.5)
+        //     * (self.map_size.y as usize - y + x - 1) as f32;
+        // let player_y = ((PlayerComponent::texture().height() - 1.0) * 0.25) * (x + y) as f32;
         self.player_component
             .draw(
                 &mut canvas,
-                DrawParam::new()
-                    .dest(vec2(player_x, player_y + 2.0) * self.scale)
-                    .scale(vec2(self.scale, self.scale)),
-                PlayerComponentParam,
+                DrawParam::new(),
+                PlayerComponentParam::new(self.scale),
             )
             .unwrap();
 
@@ -162,16 +161,6 @@ impl Visualizer {
     }
 
     pub fn handle_event(&mut self) -> Result<(), LibError> {
-        if let Some(event) = self.event_queue().borrow_mut().pop() {
-            match event {
-                Event::TileContentUpdated(tile, coords) => {
-                    self.contents_map_component
-                        .update(ContentsMapComponentUpdateParam::new(tile, coords))
-                        .unwrap();
-                }
-                _ => {}
-            };
-        }
 
         self.tiles_map_component
             .update(TilesMapComponentUpdateParam {
@@ -185,6 +174,27 @@ impl Visualizer {
                 ]),
             })
             .unwrap();
+
+        // Discard events while you find Event::Moved or Event::TileContentUpdated
+        while let Some(event) = self.event_queue().borrow_mut().pop() {
+            match event {
+                Event::Moved(tile, coords) => {
+                    println!("Moved to: {:?}", coords);
+                    self.player_component
+                        .update(PlayerComponentUpdateParam::new(coords));
+                    break;
+                },
+                Event::TileContentUpdated(tile, coords) => {
+                    println!("Tile content updated: {:?}", coords);
+                    self.contents_map_component
+                        .update(ContentsMapComponentUpdateParam::new(tile, coords))
+                        .unwrap();
+                    break;
+                },
+                _ => {}
+            };
+        }
+
         Ok(())
     }
 

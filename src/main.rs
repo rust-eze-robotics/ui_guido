@@ -36,7 +36,6 @@ impl EventHandler for State {
         let screen_height = ctx.gfx.window().inner_size().height as f32;
         if ctx.time.ticks() % 100 == 0 {
             if self.visualizer.event_queue().borrow_mut().pop().is_some() {
-                println!("Event detected");
                 self.visualizer.handle_event();
             } else {
                 self.visualizer.next_tick();
@@ -46,11 +45,11 @@ impl EventHandler for State {
                 "Robot: {:?}",
                 self.visualizer.runner().get_robot().get_coordinate()
             );
-            println!("Delta frame time: {:?} ", ctx.time.delta());
-            println!("Average FPS: {}", ctx.time.fps());
-            println!("Origin: {:?}", self.visualizer.origin());
-            println!("Scale: {:?}", self.visualizer.scale());
-            println!("Screen: {:?}", vec2(screen_width, screen_height));
+            // println!("Delta frame time: {:?} ", ctx.time.delta());
+            // println!("Average FPS: {}", ctx.time.fps());
+            // println!("Origin: {:?}", self.visualizer.origin());
+            // println!("Scale: {:?}", self.visualizer.scale());
+            // println!("Screen: {:?}", vec2(screen_width, screen_height));
         }
         self.visualizer
             .add_offset(self.gamepad.get_leftstick_offset());
@@ -123,6 +122,7 @@ fn main() {
         .unwrap();
 
     let params = WorldGeneratorParameters {
+        seed: 1,
         world_size: 200,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
@@ -169,6 +169,7 @@ fn main() {
             runner,
             map_rc.clone(),
             vec2(0.0, 0.0),
+            spawn_point,
             4.0,
         ),
         gamepad: GamePad::new(),
