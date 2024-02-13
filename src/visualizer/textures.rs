@@ -30,6 +30,7 @@ pub enum Texture {
     TeleportHalf,
     Fish,
     Tree,
+    Bush,
     Rock,
     Fire,
     Garbage,
@@ -37,6 +38,10 @@ pub enum Texture {
     Bin,
     Crate,
     Market,
+    Bank,
+    Building,
+    Scarecrow,
+    JollyBlock,
     Player,
 }
 
@@ -129,12 +134,17 @@ impl Texture {
             Content::Fish(_) => Some(Texture::Fish),
             Content::Tree(_) => Some(Texture::Tree),
             Content::Rock(_) => Some(Texture::Rock),
+            Content::Bush(_) => Some(Texture::Bush),
             Content::Fire => Some(Texture::Fire),
             Content::Garbage(_) => Some(Texture::Garbage),
             Content::Coin(_) => Some(Texture::Coin),
             Content::Bin(_) => Some(Texture::Bin),
             Content::Crate(_) => Some(Texture::Crate),
             Content::Market(_) => Some(Texture::Market),
+            Content::Bank(_) => Some(Texture::Bank),
+            Content::Building => Some(Texture::Building),
+            Content::Scarecrow => Some(Texture::Scarecrow),
+            Content::JollyBlock(_) => Some(Texture::JollyBlock),
             _ => None,
         }
     }
@@ -168,6 +178,7 @@ impl Texture {
             Texture::Fish => Image::from_path(gfx, "/contents/fish.png").unwrap(),
             Texture::Tree => Image::from_path(gfx, "/contents/tree.png").unwrap(),
             Texture::Rock => Image::from_path(gfx, "/contents/rock.png").unwrap(),
+            Texture::Bush => Image::from_path(gfx, "/contents/bush.png").unwrap(),
             Texture::Fire => Image::from_path(gfx, "/contents/fire.png").unwrap(),
             Texture::Garbage => Image::from_path(gfx, "/contents/garbage.png").unwrap(),
             Texture::Coin => Image::from_path(gfx, "/contents/coin.png").unwrap(),
@@ -175,6 +186,10 @@ impl Texture {
             Texture::Crate => Image::from_path(gfx, "/contents/crate.png").unwrap(),
             Texture::Market => Image::from_path(gfx, "/contents/market.png").unwrap(),
             Texture::Player => Image::from_path(gfx, "/player/robot.png").unwrap(),
+            Texture::Bank => Image::from_path(gfx, "/contents/bank.png").unwrap(),
+            Texture::Building => Image::from_path(gfx, "/contents/building.png").unwrap(),
+            Texture::Scarecrow => Image::from_path(gfx, "/contents/scarecrow.png").unwrap(),
+            Texture::JollyBlock => Image::from_path(gfx, "/contents/jollyblock.png").unwrap(),
         }
 
     }
