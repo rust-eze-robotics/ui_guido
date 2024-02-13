@@ -25,9 +25,15 @@ pub(crate) struct ContentsMapComponentParam {
     pub scale: f32,
 }
 
+pub(crate) enum ContentsMapComponentUpdateType {
+    WorldVisibility(Vec<Vec<Option<Tile>>>),
+    ContentChange(Tile, (usize, usize)),
+}
+
 pub(crate) struct ContentsMapComponentUpdateParam {
-    tile: Tile,
-    coords: (usize, usize),
+    _type: ContentsMapComponentUpdateType,
+    // tile: Tile,
+    // coords: (usize, usize),
 }
 
 impl ContentsMapComponent {
@@ -64,37 +70,16 @@ impl ContentsMapComponent {
 
         Self { instances, map_rc }
     }
-}
 
-impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
-    for ContentsMapComponent
-{
-    fn draw(
-        &self,
-        canvas: &mut ggez::graphics::Canvas,
-        _draw_param: DrawParam,
-        component_param: ContentsMapComponentParam,
-    ) -> Result<(), ggez::GameError> {
-        for (_texture, instance) in &self.instances {
-            canvas.draw(
-                &instance.array,
-                DrawParam::new().scale(vec2(component_param.scale, component_param.scale)),
-            );
-        }
-        Ok(())
-    }
+    pub fn update_content(&mut self, tile: &Tile, coords: (usize, usize)) {
 
-    fn update(
-        &mut self,
-        update_param: ContentsMapComponentUpdateParam,
-    ) -> Result<(), ggez::GameError> {
         let mut map = self.map_rc.borrow_mut();
-        let x = update_param.coords.0;
-        let y = update_param.coords.1;
+        let y = coords.0;
+        let x = coords.1;
 
         let previous_texture = Texture::from_content(&map[y][x].content).unwrap();
 
-        let current_texture = Texture::from_content(&update_param.tile.content).unwrap();
+        let current_texture = Texture::from_content(&tile.content).unwrap();
 
         if let Some(instance) = self.instances.get_mut(&previous_texture) {
             // Get the position of the content in the instance array
@@ -138,7 +123,71 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
                 .push(draw_param.clone());
         }
 
-        map[update_param.coords.1][update_param.coords.0].content = update_param.tile.content;
+        map[y][x].content = tile.content.clone();
+    }
+}
+
+impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
+    for ContentsMapComponent
+{
+    fn draw(
+        &self,
+        canvas: &mut ggez::graphics::Canvas,
+        _draw_param: DrawParam,
+        component_param: ContentsMapComponentParam,
+    ) -> Result<(), ggez::GameError> {
+        for (_texture, instance) in &self.instances {
+            canvas.draw(
+                &instance.array,
+                DrawParam::new().scale(vec2(component_param.scale, component_param.scale)),
+            );
+        }
+        Ok(())
+    }
+
+    fn update(
+        &mut self,
+        update_param: ContentsMapComponentUpdateParam,
+    ) -> Result<(), ggez::GameError> {
+
+        match update_param._type {
+            ContentsMapComponentUpdateType::WorldVisibility(current_world) => {
+                
+                for (y, row) in current_world.iter().enumerate() {
+                    for (x, tile) in row.iter().enumerate() {
+                        if let Some(tile) = tile {
+                            if let Some(texture) = Texture::from_content(&tile.content) {
+                                if let Some(instance) = self.instances.get_mut(&texture) {
+                                    let element_position: usize = instance
+                                        .elements
+                                        .iter()
+                                        .position(|(e_x, e_y)| x == *e_x && y == *e_y)
+                                        .unwrap()
+                                        .clone();
+
+                                    let draw_param = instance
+                                        .array
+                                        .instances()
+                                        .get(element_position)
+                                        .unwrap()
+                                        .clone();
+
+                                    instance.array.update(
+                                        element_position as u32,
+                                        draw_param
+                                            .color(Color::WHITE),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ContentsMapComponentUpdateType::ContentChange(tile, coords) => {
+                self.update_content(&tile, coords);
+            }
+        }
 
         Ok(())
     }
@@ -151,7 +200,7 @@ impl ContentsMapComponentParam {
 }
 
 impl ContentsMapComponentUpdateParam {
-    pub fn new(tile: Tile, coords: (usize, usize)) -> Self {
-        Self { tile, coords }
+    pub fn new(_type: ContentsMapComponentUpdateType) -> Self {
+        Self { _type }
     }
 }

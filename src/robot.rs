@@ -35,15 +35,24 @@ impl MyRobot {
 
 impl Runnable for MyRobot {
     fn process_tick(&mut self, world: &mut robotics_lib::world::World) {
-        Spotlight::illuminate(self, world, 10);
-        TomTom::go_to_tile(
-            self,
-            world,
-            false,
-            None,
-            Some(rust_eze_tomtom::plain::PlainContent::Bush),
-        );
-        // go(self, world, Direction::Left);
+        // Spotlight::illuminate(self, world, 10);
+        // TomTom::go_to_tile(
+        //     self,
+        //     world,
+        //     false,
+        //     None,
+        //     Some(rust_eze_tomtom::plain::PlainContent::Bush),
+        // );
+        //
+        let directions = vec![
+            Direction::Up,
+            Direction::Right,
+            Direction::Down,
+            Direction::Left,
+        ];
+        // Pick a random direction 
+        let direction = &directions[rand::random::<usize>() % 4];
+        go(self, world, direction.clone());
 
         self.world.replace(Some(robot_map(world).unwrap()));
     }

@@ -68,7 +68,7 @@ impl Component<PlayerComponentParam, PlayerComponentUpdateParam> for PlayerCompo
         
         // println!("PlayerComponent::draw: player_x: {}, player_y: {}", player_x, player_y);
         canvas.draw(&self.image, draw_param
-            .dest(vec2(player_x, player_y + 2.0) * scale)
+            .dest(vec2(player_x, player_y - 2.0) * scale)
             .scale(vec2(scale, scale))
         );
         Ok(())

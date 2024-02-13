@@ -16,6 +16,8 @@ use robotics_lib::runner::Runner;
 use robotics_lib::utils::LibError;
 use robotics_lib::world::tile::Tile;
 
+use crate::visualizer::components::contents_map::ContentsMapComponentUpdateType;
+
 use self::components::contents_map::{
     ContentsMapComponent, ContentsMapComponentParam, ContentsMapComponentUpdateParam,
 };
@@ -175,6 +177,21 @@ impl Visualizer {
             })
             .unwrap();
 
+        self.contents_map_component
+            .update(ContentsMapComponentUpdateParam::new(
+                ContentsMapComponentUpdateType::WorldVisibility(
+                    self.world.borrow().clone().unwrap_or(vec![
+                        vec![
+                            None;
+                            self.map_size.x
+                                as usize
+                        ];
+                        self.map_size.y as usize
+                    ]),
+                ),
+            ))
+            .unwrap();
+
         // Discard events while you find Event::Moved or Event::TileContentUpdated
         while let Some(event) = self.event_queue().borrow_mut().pop() {
             match event {
@@ -187,7 +204,9 @@ impl Visualizer {
                 Event::TileContentUpdated(tile, coords) => {
                     println!("Tile content updated: {:?}", coords);
                     self.contents_map_component
-                        .update(ContentsMapComponentUpdateParam::new(tile, coords))
+                        .update(ContentsMapComponentUpdateParam::new(
+                            ContentsMapComponentUpdateType::ContentChange(tile, coords),
+                        ))
                         .unwrap();
                     break;
                 },
