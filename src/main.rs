@@ -1,19 +1,20 @@
-use std::{env, path::PathBuf, rc::Rc, cell::RefCell};
+use std::{cell::RefCell, env, path::PathBuf, rc::Rc};
 
 use gamepad::GamePad;
 use ggez::{
     event::{Axis, EventHandler},
     glam::vec2,
 };
-use midgard::{
-    world_generator::{WorldGenerator, WorldGeneratorParameters},
-};
+use midgard::world_generator::{WorldGenerator, WorldGeneratorParameters};
 use robot::MyRobot;
 use visualizer::Visualizer;
 
 use robotics_lib::{
-    runner::{Robot, Runnable, backpack::BackPack, Runner},
-    world::{tile::Tile, world_generator::{Generator}, coordinates::Coordinate, World}, interface::{go, Direction, robot_view, robot_map}, event::events::Event, energy::Energy,
+    energy::Energy,
+    event::events::Event,
+    interface::{go, robot_map, robot_view, Direction},
+    runner::{backpack::BackPack, Robot, Runnable, Runner},
+    world::{coordinates::Coordinate, tile::Tile, world_generator::Generator, World},
 };
 
 mod gamepad;
@@ -21,7 +22,8 @@ mod robot;
 pub mod visualizer;
 
 struct State {
-    map: Vec<Vec<Tile>>,
+    // map: Vec<Vec<Tile>>,
+    map: Rc<RefCell<Vec<Vec<Tile>>>>,
     world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
     // image_scale: f32,
     visualizer: Visualizer,
@@ -33,8 +35,17 @@ impl EventHandler for State {
         let screen_width = ctx.gfx.window().inner_size().width as f32;
         let screen_height = ctx.gfx.window().inner_size().height as f32;
         if ctx.time.ticks() % 100 == 0 {
-            self.visualizer.next_tick().unwrap();
-            println!("Robot: {:?}", self.visualizer.runner().get_robot().get_coordinate());
+            if self.visualizer.event_queue().borrow_mut().pop().is_some() {
+                println!("Event detected");
+                self.visualizer.handle_event();
+            } else {
+                self.visualizer.next_tick();
+            }
+
+            println!(
+                "Robot: {:?}",
+                self.visualizer.runner().get_robot().get_coordinate()
+            );
             println!("Delta frame time: {:?} ", ctx.time.delta());
             println!("Average FPS: {}", ctx.time.fps());
             println!("Origin: {:?}", self.visualizer.origin());
@@ -92,7 +103,6 @@ impl EventHandler for State {
     }
 }
 
-
 fn main() {
     let (ctx, event_loop) = ggez::ContextBuilder::new("robotics", "ggez")
         .window_setup(
@@ -139,22 +149,35 @@ fn main() {
     //
 
     let mut world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> = Rc::new(RefCell::new(None));
+    let mut event_queue: Rc<RefCell<Vec<Event>>> = Rc::new(RefCell::new(Vec::new()));
 
-    let runner = Runner::new(Box::new(MyRobot::new(
-        world_rc.clone(),
-    )), &mut world_generator).unwrap();
+    let runner = Runner::new(
+        Box::new(MyRobot::new(world_rc.clone(), event_queue.clone())),
+        &mut world_generator,
+    )
+    .unwrap();
+
+    let map_rc = Rc::new(RefCell::new(map));
 
     let mut state = State {
         world: world_rc.clone(),
-        map: map.clone(),
-        visualizer: Visualizer::new(&ctx, world_rc.clone(), runner, &map, vec2(0.0, 0.0), 4.0),
+        map: map_rc.clone(),
+        visualizer: Visualizer::new(
+            &ctx,
+            world_rc.clone(),
+            event_queue.clone(),
+            runner,
+            map_rc.clone(),
+            vec2(0.0, 0.0),
+            4.0,
+        ),
         gamepad: GamePad::new(),
     };
 
     // state.visualizer.set_center(&ctx, vec2(0.0, 0.0));
-    state
-        .visualizer
-        .set_center(&ctx, vec2(0.0, (map.len() / 2) as f32));
+    // state
+    //     .visualizer
+    //     .set_center(&ctx, vec2(0.0, (map.len() / 2) as f32));
 
     ggez::event::run(ctx, event_loop, state);
 }

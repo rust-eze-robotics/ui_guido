@@ -1,17 +1,18 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use ggez::{
     context::Has,
     glam::vec2,
-    graphics::{DrawParam, GraphicsContext, InstanceArray, Color},
+    graphics::{Color, DrawParam, GraphicsContext, InstanceArray},
 };
-use robotics_lib::world::tile::Tile;
+use robotics_lib::{event::events::Event, world::tile::Tile};
 
 use crate::visualizer::textures::Texture;
 
 use super::Component;
 
 pub(crate) struct ContentsMapComponent {
+    map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
     instances: HashMap<Texture, ContentInstance>,
 }
 
@@ -24,60 +25,133 @@ pub(crate) struct ContentsMapComponentParam {
     pub scale: f32,
 }
 
-pub(crate) struct ContentsMapComponentUpdateParam; 
+pub(crate) struct ContentsMapComponentUpdateParam {
+    tile: Tile,
+    coords: (usize, usize),
+}
 
 impl ContentsMapComponent {
-    pub fn from_map(gfx: &impl Has<GraphicsContext>, map: &Vec<Vec<Tile>>) -> Self {
+    pub fn from_map(gfx: &impl Has<GraphicsContext>, map_rc: Rc<RefCell<Vec<Vec<Tile>>>>) -> Self {
         let mut instances = HashMap::new();
 
-        map.iter().enumerate().for_each(|(y, row)| {
-            row.iter().enumerate().for_each(|(x, tile)| {
-                if let Some(texture) = Texture::from_content(&tile.content) {
-                    let image_x = (texture.width() * 0.5) * (map.len() - y + x - 1) as f32;
-                    let image_y = ((texture.height() - 1.0) * 0.25) * (x + y) as f32;
-                    let offset_y = if tile.elevation < 3 { 2.0 } else { 6.0 };
+        map_rc
+            .clone()
+            .borrow()
+            .iter()
+            .enumerate()
+            .for_each(|(y, row)| {
+                row.iter().enumerate().for_each(|(x, tile)| {
+                    if let Some(texture) = Texture::from_content(&tile.content) {
+                        let image_x = (texture.width() * 0.5) * (row.len() - y + x - 1) as f32;
+                        let image_y = ((texture.height() - 1.0) * 0.25) * (x + y) as f32;
+                        let offset_y = if tile.elevation < 3 { 2.0 } else { 6.0 };
 
-                    let instance = instances.entry(texture).or_insert_with(|| ContentInstance {
-                        array: InstanceArray::new(gfx, texture.get_image(gfx)),
-                        elements: Vec::new(),
-                    });
+                        let instance =
+                            instances.entry(texture).or_insert_with(|| ContentInstance {
+                                array: InstanceArray::new(gfx, texture.get_image(gfx)),
+                                elements: Vec::new(),
+                            });
 
-                    instance.array.push(DrawParam::new()
-                        .dest(vec2(image_x, image_y - offset_y))
-                        .color(Color::from_rgba(0, 0, 0, 127))
-                    );
-                    instance.elements.push((x, y));
-                }
+                        instance.array.push(
+                            DrawParam::new()
+                                .dest(vec2(image_x, image_y - offset_y))
+                                .color(Color::from_rgba(0, 0, 0, 127)),
+                        );
+                        instance.elements.push((x, y));
+                    }
+                });
             });
-        });
 
-        Self { instances }
+        Self { instances, map_rc }
     }
 }
 
-impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam> for ContentsMapComponent {
+impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
+    for ContentsMapComponent
+{
     fn draw(
         &self,
         canvas: &mut ggez::graphics::Canvas,
         _draw_param: DrawParam,
         component_param: ContentsMapComponentParam,
     ) -> Result<(), ggez::GameError> {
-        
         for (_texture, instance) in &self.instances {
             canvas.draw(
                 &instance.array,
-                DrawParam::new()
-                    .scale(vec2(component_param.scale, component_param.scale))
+                DrawParam::new().scale(vec2(component_param.scale, component_param.scale)),
             );
         }
+        Ok(())
+    }
+
+    fn update(
+        &mut self,
+        update_param: ContentsMapComponentUpdateParam,
+    ) -> Result<(), ggez::GameError> {
+        let mut map = self.map_rc.borrow_mut();
+        let x = update_param.coords.0;
+        let y = update_param.coords.1;
+
+        let previous_texture = Texture::from_content(&map[y][x].content).unwrap();
+
+        let current_texture = Texture::from_content(&update_param.tile.content).unwrap();
+
+        if let Some(instance) = self.instances.get_mut(&previous_texture) {
+            // Get the position of the content in the instance array
+            let element_position: usize = instance
+                .elements
+                .iter()
+                .position(|(e_x, e_y)| x == *e_x && y == *e_y)
+                .unwrap()
+                .clone();
+
+            // Get corresponding draw param
+            let draw_param = instance
+                .array
+                .instances()
+                .get(element_position)
+                .unwrap()
+                .clone();
+
+            // Remove the draw param slicing the array
+            instance.array.set(
+                instance
+                    .array
+                    .instances()
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(i, draw_param)| {
+                        if i != element_position {
+                            Some(draw_param.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>(),
+            );
+
+            // Push the draw param in the new instance of the texture
+            self.instances
+                .get_mut(&current_texture)
+                .unwrap()
+                .array
+                .push(draw_param.clone());
+        }
+
+        map[update_param.coords.1][update_param.coords.0].content = update_param.tile.content;
+
         Ok(())
     }
 }
 
 impl ContentsMapComponentParam {
     pub fn new(scale: f32) -> Self {
-        Self { 
-            scale
-        }
+        Self { scale }
+    }
+}
+
+impl ContentsMapComponentUpdateParam {
+    pub fn new(tile: Tile, coords: (usize, usize)) -> Self {
+        Self { tile, coords }
     }
 }

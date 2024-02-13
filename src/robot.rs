@@ -1,20 +1,29 @@
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell, rc::Rc};
 
-use robotics_lib::{world::{tile::Tile, coordinates::Coordinate, World}, runner::{Runnable, backpack::BackPack, Robot}, interface::{robot_map, Direction, go}, event::events::Event, energy::Energy};
-use rust_eze_tomtom::TomTom;
+use robotics_lib::{
+    energy::Energy,
+    event::events::Event,
+    interface::{go, robot_map, Direction},
+    runner::{backpack::BackPack, Robot, Runnable},
+    world::{coordinates::Coordinate, tile::Tile, World},
+};
 use rust_eze_spotlight::Spotlight;
+use rust_eze_tomtom::TomTom;
 
 pub struct MyRobot {
     pub world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
+    pub event_queue: Rc<RefCell<Vec<Event>>>,
     robot: Robot,
 }
 
 impl MyRobot {
     pub fn new(
         world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
+        event_queue: Rc<RefCell<Vec<Event>>>,
     ) -> Self {
         MyRobot {
             world,
+            event_queue,
             robot: Robot::new(),
         }
     }
@@ -41,7 +50,7 @@ impl Runnable for MyRobot {
     }
 
     fn handle_event(&mut self, _event: Event) {
-
+        self.event_queue.borrow_mut().push(_event);
     }
 
     fn get_energy(&self) -> &Energy {
@@ -65,4 +74,3 @@ impl Runnable for MyRobot {
         &mut self.robot.backpack
     }
 }
-

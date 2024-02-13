@@ -11,18 +11,25 @@ use ggez::{
     glam::{vec2, Vec2},
     graphics::{Canvas, Color, FilterMode, GraphicsContext, Sampler},
 };
+use robotics_lib::event::events::Event;
 use robotics_lib::runner::Runner;
 use robotics_lib::utils::LibError;
 use robotics_lib::world::tile::Tile;
 
-use self::components::contents_map::{ContentsMapComponent, ContentsMapComponentParam};
+use self::components::contents_map::{
+    ContentsMapComponent, ContentsMapComponentParam, ContentsMapComponentUpdateParam,
+};
 use self::components::player::{PlayerComponent, PlayerComponentParam};
-use self::components::tails_map::{TilesMapComponentParam, TilesMapComponent, TilesMapComponentUpdateParam};
+use self::components::tails_map::{
+    TilesMapComponent, TilesMapComponentParam, TilesMapComponentUpdateParam,
+};
 use self::components::Component;
 
 pub struct Visualizer {
     runner: Runner,
+    map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
     world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
+    event_queue: Rc<RefCell<Vec<Event>>>,
     map_size: Vec2,
     origin: Vec2,
     scale: f32,
@@ -35,20 +42,24 @@ impl Visualizer {
     pub fn new(
         gfx: &impl Has<GraphicsContext>,
         world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
+        event_queue: Rc<RefCell<Vec<Event>>>,
         runner: Runner,
-        map: &Vec<Vec<Tile>>,
+        map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
         origin: Vec2,
         scale: f32,
     ) -> Self {
-
-        let tiles_map_component = TilesMapComponent::from_map(gfx, map.clone());
-        let contents_map_component = ContentsMapComponent::from_map(gfx, map);
+        let tiles_map_component = TilesMapComponent::from_map(gfx, map_rc.clone());
+        let contents_map_component = ContentsMapComponent::from_map(gfx, map_rc.clone());
         let player_component = PlayerComponent::new(gfx);
+
+        let map_len = map_rc.clone().borrow().len() as f32;
 
         Self {
             world,
+            event_queue,
             runner,
-            map_size: vec2(map.len() as f32, map.len() as f32),
+            map_rc,
+            map_size: vec2(map_len, map_len),
             origin,
             scale,
             tiles_map_component,
@@ -97,7 +108,8 @@ impl Visualizer {
 
         let x = self.runner().get_robot().get_coordinate().get_col();
         let y = self.runner().get_robot().get_coordinate().get_row();
-        let player_x = (PlayerComponent::texture().width() * 0.5) * (self.map_size.y as usize - y + x - 1) as f32;
+        let player_x = (PlayerComponent::texture().width() * 0.5)
+            * (self.map_size.y as usize - y + x - 1) as f32;
         let player_y = ((PlayerComponent::texture().height() - 1.0) * 0.25) * (x + y) as f32;
         self.player_component
             .draw(
@@ -115,7 +127,6 @@ impl Visualizer {
 
     pub fn add_scale(&mut self, _gfx: &impl Has<GraphicsContext>, scale: f32) {
         if self.scale + scale * 0.01 > 1.0 && self.scale + scale * 0.01 < 4.0 {
-
             self.origin.x += scale * 0.5 * 0.01;
             self.origin.y += scale * 0.5 * 0.01;
 
@@ -142,19 +153,39 @@ impl Visualizer {
         self.origin.y = -image_y - screen_height * 0.5 + 4.0 * 0.5 * self.scale;
     }
 
-    pub fn next_tick(&mut self) -> Result<(), LibError>  {
-        self.runner.game_tick();
-        self.tiles_map_component.update(
-            TilesMapComponentUpdateParam {
-                last_map: self.world.borrow().clone().unwrap(),
-            }
-        );
-
-        Ok(())
+    pub fn next_tick(&mut self) -> Result<(), LibError> {
+        self.runner.game_tick()
     }
 
     pub fn runner(&self) -> &Runner {
         &self.runner
+    }
+
+    pub fn handle_event(&mut self) -> Result<(), LibError> {
+        if let Some(event) = self.event_queue().borrow_mut().pop() {
+            match event {
+                Event::TileContentUpdated(tile, coords) => {
+                    self.contents_map_component
+                        .update(ContentsMapComponentUpdateParam::new(tile, coords))
+                        .unwrap();
+                }
+                _ => {}
+            };
+        }
+
+        self.tiles_map_component
+            .update(TilesMapComponentUpdateParam {
+                current_map: self.world.borrow().clone().unwrap_or(vec![
+                    vec![
+                        None;
+                        self.map_size.x
+                            as usize
+                    ];
+                    self.map_size.y as usize
+                ]),
+            })
+            .unwrap();
+        Ok(())
     }
 
     pub fn origin(&self) -> Vec2 {
@@ -163,5 +194,9 @@ impl Visualizer {
 
     pub fn scale(&self) -> f32 {
         self.scale
+    }
+
+    pub fn event_queue(&self) -> Rc<RefCell<Vec<Event>>> {
+        self.event_queue.clone()
     }
 }

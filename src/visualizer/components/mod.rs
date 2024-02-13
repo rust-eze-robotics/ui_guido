@@ -4,15 +4,11 @@ use ggez::{
 };
 
 pub(super) mod contents_map;
-pub(super) mod tails_map;
 pub(super) mod player;
+pub(super) mod tails_map;
 
 pub(crate) trait Component<ComponentParam, UpdateParam> {
-
-    fn update(
-        &mut self,
-        update_param: UpdateParam
-    ) -> Result<(), ggez::GameError> {
+    fn update(&mut self, update_param: UpdateParam) -> Result<(), ggez::GameError> {
         Ok(())
     }
 

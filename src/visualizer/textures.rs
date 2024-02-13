@@ -191,7 +191,6 @@ impl Texture {
             Texture::Scarecrow => Image::from_path(gfx, "/contents/scarecrow.png").unwrap(),
             Texture::JollyBlock => Image::from_path(gfx, "/contents/jollyblock.png").unwrap(),
         }
-
     }
 
     pub fn get_blocks() -> Vec<Self> {
@@ -220,7 +219,6 @@ impl Texture {
             Self::TeleportHalf,
         ]
     }
-
 
     pub fn width(&self) -> f32 {
         16.0

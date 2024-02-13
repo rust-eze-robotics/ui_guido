@@ -1,14 +1,18 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 use ggez::{
     context::Has,
     glam::{vec2, Vec2},
-    graphics::{Canvas, DrawParam, GraphicsContext, InstanceArray, Color},
+    graphics::{Canvas, Color, DrawParam, GraphicsContext, InstanceArray},
 };
 
 use robotics_lib::world::tile::Tile;
 
-use crate::visualizer::textures::{Texture, self};
+use crate::visualizer::textures::{self, Texture};
 
 use super::Component;
 
@@ -18,8 +22,7 @@ struct CoordinatedInstance {
 }
 
 pub(crate) struct TilesMapComponent {
-    map: Vec<Vec<Tile>>,
-
+    map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
     diagonals: Vec<Vec<(usize, usize)>>,
     instances: Vec<HashMap<Texture, CoordinatedInstance>>,
 }
@@ -31,13 +34,15 @@ pub(crate) struct TilesMapComponentParam {
 }
 
 pub(crate) struct TilesMapComponentUpdateParam {
-    pub last_map: Vec<Vec<Option<Tile>>>,
+    pub current_map: Vec<Vec<Option<Tile>>>,
 }
 
 impl TilesMapComponent {
-    pub fn from_map(gfx: &impl Has<GraphicsContext>, map: Vec<Vec<Tile>>) -> Self {
+    pub fn from_map(gfx: &impl Has<GraphicsContext>, map_rc: Rc<RefCell<Vec<Vec<Tile>>>>) -> Self {
         let mut diagonals: Vec<Vec<(usize, usize)>> = Vec::new();
         let mut instances: Vec<HashMap<Texture, CoordinatedInstance>> = Vec::new();
+
+        let map = map_rc.borrow().clone();
 
         for k in 0..=(2 * map.len() - 2) as usize {
             let mut diagonal_components = Vec::new();
@@ -53,31 +58,39 @@ impl TilesMapComponent {
         }
 
         diagonals.iter().for_each(|diagonal| {
-
-            instances.push(Self::create_diagonal_instances(&map, gfx, diagonal));
+            instances.push(Self::create_diagonal_instances(
+                map_rc.clone(),
+                gfx,
+                diagonal,
+            ));
         });
 
-        Self { 
-            map,
+        Self {
+            map_rc,
             diagonals,
-            instances 
+            instances,
         }
     }
 
     fn create_diagonal_instances(
-        map: &Vec<Vec<Tile>>,
-        gfx: &impl Has<GraphicsContext>, 
-        diagonal: &Vec<(usize, usize)>
+        map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
+        gfx: &impl Has<GraphicsContext>,
+        diagonal: &Vec<(usize, usize)>,
     ) -> HashMap<Texture, CoordinatedInstance> {
+        let map = map_rc.borrow();
 
-        let mut diagonal_instances = 
-            Texture::get_blocks()
-                .iter()
-                .map(|texture| (*texture, CoordinatedInstance {
-                    array: InstanceArray::new(gfx, texture.get_image(gfx)),
-                    elements: Vec::new(),
-                }))
-                .collect::<HashMap<_, _>>();
+        let mut diagonal_instances = Texture::get_blocks()
+            .iter()
+            .map(|texture| {
+                (
+                    *texture,
+                    CoordinatedInstance {
+                        array: InstanceArray::new(gfx, texture.get_image(gfx)),
+                        elements: Vec::new(),
+                    },
+                )
+            })
+            .collect::<HashMap<_, _>>();
 
         diagonal.iter().for_each(|(x, y)| {
             let texture = Texture::from_tile(&map[*y][*x]);
@@ -86,9 +99,10 @@ impl TilesMapComponent {
 
             let instance = diagonal_instances.get_mut(&texture).unwrap();
 
-            instance.array.push(ggez::graphics::DrawParam::new()
-                .dest(Vec2::new(image_x, image_y))
-                .color(Color::from_rgba(0, 0, 0, 127))
+            instance.array.push(
+                ggez::graphics::DrawParam::new()
+                    .dest(Vec2::new(image_x, image_y))
+                    .color(Color::from_rgba(0, 0, 0, 127)),
             );
             instance.elements.push((*x, *y));
         });
@@ -114,8 +128,7 @@ impl Component<TilesMapComponentParam, TilesMapComponentUpdateParam> for TilesMa
                 {
                     canvas.draw(
                         &instance.array,
-                        DrawParam::new()
-                            .scale(vec2(component_param.scale, component_param.scale)),
+                        DrawParam::new().scale(vec2(component_param.scale, component_param.scale)),
                     );
                 }
             });
@@ -125,106 +138,129 @@ impl Component<TilesMapComponentParam, TilesMapComponentUpdateParam> for TilesMa
 
     fn update(
         &mut self,
-        update_param: TilesMapComponentUpdateParam
+        update_param: TilesMapComponentUpdateParam,
     ) -> Result<(), ggez::GameError> {
-    
-        let last_map = update_param.last_map();
-        let mut map = self.map.clone();
+        let current_map = update_param.current_map();
+        let map = self.map_rc.clone().borrow().clone();
+        let mut updated_map = map.clone();
 
-        self.map
-            .iter()
-            .enumerate()
-            .for_each(|(y, row)| {
-                row.iter()
-                    .enumerate()
-                    .for_each(|(x, tile)| {
-                        if last_map[y][x].is_some() {
-                            let diagonal_instance = &mut self.instances[x + y];
-                            let image_x = (Texture::from_tile(tile).width() * 0.5) * (self.map.len() - y + x - 1) as f32;
-                            let image_y = ((Texture::from_tile(tile).height() - 1.0) * 0.25) * (x + y) as f32;
-                            let position = diagonal_instance
-                                .get_mut(&Texture::from_tile(tile))
-                                .unwrap()
-                                .elements
-                                .iter()
-                                .position(|(e_x, e_y)| x == *e_x && y == *e_y)
-                                .unwrap();
-                            diagonal_instance
-                                .get_mut(&Texture::from_tile(tile))
-                                .unwrap()
-                                .array
-                                .update(
-                                    position as u32, 
-                                    DrawParam::new()
-                                        .dest(vec2(image_x, image_y))
-                                        .color(Color::WHITE)
-                                );
-                        }
+        // Set color white for every discovered tile
+        map.iter().enumerate().for_each(|(y, row)| {
+            row.iter().enumerate().for_each(|(x, tile)| {
+                // If tile was discovered previously by the player
+                if current_map[y][x].is_some() {
+                    // Get the instance of the tile
+                    let diagonal_instance = &mut self.instances[x + y];
 
-                    });
+                    // Calculate the position of the tile in the matrix
+                    let image_x =
+                        (Texture::from_tile(tile).width() * 0.5) * (map.len() - y + x - 1) as f32;
+                    let image_y =
+                        ((Texture::from_tile(tile).height() - 1.0) * 0.25) * (x + y) as f32;
+
+                    // Get the position of the tile in the instance array
+                    // Suppose that the tile exists in the elements array
+                    let position = diagonal_instance
+                        .get_mut(&Texture::from_tile(tile))
+                        .unwrap()
+                        .elements
+                        .iter()
+                        .position(|(e_x, e_y)| x == *e_x && y == *e_y)
+                        .unwrap();
+
+                    // Update the corrisponding draw param
+                    diagonal_instance
+                        .get_mut(&Texture::from_tile(tile))
+                        .unwrap()
+                        .array
+                        .update(
+                            position as u32,
+                            DrawParam::new()
+                                .dest(vec2(image_x, image_y))
+                                .color(Color::WHITE),
+                        );
+                }
             });
-       
-        self.map
-            .iter()
-            .zip(last_map.iter())
+        });
+
+        // Update modified tiles
+        map.iter()
+            // Compare elements of the previous map with the current map
+            .zip(current_map.iter())
             .enumerate()
             .for_each(|(y, (prev_row, last_row))| {
-                prev_row.iter()
+                prev_row
+                    .iter()
                     .zip(last_row.iter())
                     .enumerate()
-                    .filter_map(|(x, (prev_tail, last_tail))| {
-                        if let Some(tile) = last_tail {
-                            Some((x, (prev_tail, tile)))
-                        }
-                        else {
+                    .filter_map(|(x, (prev_tile, last_tile))| {
+                        // Remove not discovered tiles from the list
+                        if let Some(tile) = last_tile {
+                            Some((x, (prev_tile, tile)))
+                        } else {
                             None
                         }
                     })
                     .for_each(|(x, (prev_tale, last_tale))| {
+                        // Check if tile texture has changed
+
                         let prev_texture = Texture::from_tile(prev_tale);
                         let last_texture = Texture::from_tile(last_tale);
 
                         if prev_tale != last_tale {
                             let diagonal_instances = &mut self.instances[x + y];
 
+                            // Get actual instance of the tile
+                            // Suppose that the tile exists in the elements array
                             let prev_instance = diagonal_instances.get_mut(&prev_texture).unwrap();
 
-                            let element_position: usize = prev_instance.elements
+                            // Get the position of the tile in the instance array
+                            let element_position: usize = prev_instance
+                                .elements
                                 .iter()
                                 .position(|(e_x, e_y)| x == *e_x && y == *e_y)
-                                .unwrap().clone();
+                                .unwrap()
+                                .clone();
 
-                            let draw_param = prev_instance.array.instances()
+                            // Get corresponding draw param
+                            let draw_param = prev_instance
+                                .array
+                                .instances()
                                 .get(element_position)
                                 .unwrap()
                                 .clone();
 
+                            // Remove the draw param slicing the array
                             prev_instance.array.set(
-                                prev_instance.array.instances()
+                                prev_instance
+                                    .array
+                                    .instances()
                                     .into_iter()
                                     .enumerate()
                                     .filter_map(|(i, draw_param)| {
                                         if i != element_position {
                                             Some(draw_param.clone())
-                                        }
-                                        else {
+                                        } else {
                                             None
                                         }
                                     })
-                                    .collect::<Vec<_>>()
+                                    .collect::<Vec<_>>(),
                             );
 
+                            // Push the draw param in the new instance of the texture
                             diagonal_instances
                                 .get_mut(&last_texture)
                                 .unwrap()
-                                .array.push(draw_param.clone());
+                                .array
+                                .push(draw_param.clone());
 
-                            map[y][x] = last_tale.clone();
+                            // Update corrisponding tile in the map
+                            updated_map[y][x] = last_tale.clone();
                         }
                     })
             });
 
-        self.map = map;
+        self.map_rc.replace(updated_map);
 
         Ok(())
     }
@@ -242,10 +278,10 @@ impl TilesMapComponentParam {
 
 impl TilesMapComponentUpdateParam {
     pub(crate) fn new(current_map: Vec<Vec<Option<Tile>>>) -> Self {
-        Self { last_map: current_map }
+        Self { current_map }
     }
 
-    pub(crate) fn last_map(&self) -> &Vec<Vec<Option<Tile>>> {
-        &self.last_map
+    pub(crate) fn current_map(&self) -> &Vec<Vec<Option<Tile>>> {
+        &self.current_map
     }
 }
