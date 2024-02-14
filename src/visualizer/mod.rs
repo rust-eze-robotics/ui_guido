@@ -148,10 +148,10 @@ impl Visualizer {
         let screen_height = gfx.retrieve().window().inner_size().height as f32;
 
         let image_x = (16.0 * 0.5) * (self.map_size.y - y + x - 1.0) as f32;
-        let image_y = 3.75 * (x + y - 1.0) as f32;
+        let image_y = 3.75 * (x + y) as f32;
 
-        self.origin.x = -image_x - screen_width * 0.5 + 16.0 * 0.5 * self.scale;
-        self.origin.y = -image_y - screen_height * 0.5 + 4.0 * 0.5 * self.scale;
+        self.origin.x = (-image_x * self.scale + screen_width * 0.5 - 16.0 * 0.5 * self.scale) * -1.0;
+        self.origin.y = (-image_y * self.scale + screen_height * 0.5 - 4.0 * 0.5 * self.scale) * -1.0;
     }
 
     pub fn next_tick(&mut self) -> Result<(), LibError> {
@@ -162,7 +162,7 @@ impl Visualizer {
         &self.runner
     }
 
-    pub fn handle_event(&mut self) -> Result<(), LibError> {
+    pub fn handle_event(&mut self, gfx: &impl Has<GraphicsContext>) -> Result<(), LibError> {
 
         self.tiles_map_component
             .update(TilesMapComponentUpdateParam {
@@ -196,13 +196,12 @@ impl Visualizer {
         while let Some(event) = self.event_queue().borrow_mut().pop() {
             match event {
                 Event::Moved(tile, coords) => {
-                    println!("Moved to: {:?}", coords);
                     self.player_component
                         .update(PlayerComponentUpdateParam::new(coords));
+                    self.set_center(gfx, vec2(coords.1 as f32, coords.0 as f32));
                     break;
                 },
                 Event::TileContentUpdated(tile, coords) => {
-                    println!("Tile content updated: {:?}", coords);
                     self.contents_map_component
                         .update(ContentsMapComponentUpdateParam::new(
                             ContentsMapComponentUpdateType::ContentChange(tile, coords),
