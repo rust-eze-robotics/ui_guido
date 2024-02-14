@@ -10,22 +10,19 @@ use robotics_lib::{
 use rust_eze_spotlight::Spotlight;
 use rust_eze_tomtom::TomTom;
 
-pub struct MyRobot {
+pub struct RobotWrapper {
     pub world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-    pub event_queue: Rc<RefCell<Vec<Event>>>,
-    robot: Robot,
+    pub runnable: Box<dyn Runnable>,
 }
 
-impl MyRobot {
+impl RobotWrapper {
     pub fn new(
         world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-        event_queue: Rc<RefCell<Vec<Event>>>,
-        robot: Robot,
+        runnable: Box<dyn Runnable>,
     ) -> Self {
-        MyRobot {
+        RobotWrapper {
             world,
-            event_queue,
-            robot,
+            runnable,
         }
     }
 
@@ -34,52 +31,34 @@ impl MyRobot {
     }
 }
 
-impl Runnable for MyRobot {
+impl Runnable for RobotWrapper {
     fn process_tick(&mut self, world: &mut robotics_lib::world::World) {
-        Spotlight::illuminate(self, world, 10);
-        TomTom::go_to_tile(
-            self,
-            world,
-            false,
-            None,
-            Some(rust_eze_tomtom::plain::PlainContent::Bush),
-        );
-        //
-        // let directions = vec![
-        //     Direction::Up,
-        //     Direction::Right,
-        //     Direction::Down,
-        //     Direction::Left,
-        // ];
-        // // Pick a random direction 
-        // let direction = &directions[rand::random::<usize>() % 4];
-        // go(self, world, direction.clone());
-
+        self.runnable.process_tick(world);
         self.world.replace(Some(robot_map(world).unwrap()));
     }
 
     fn handle_event(&mut self, event: Event) {
-        self.event_queue.borrow_mut().push(event);
+        self.runnable.handle_event(event.clone());
     }
 
     fn get_energy(&self) -> &Energy {
-        &self.robot.energy
+        self.runnable.get_energy()
     }
     fn get_energy_mut(&mut self) -> &mut Energy {
-        &mut self.robot.energy
+        self.runnable.get_energy_mut()
     }
 
     fn get_coordinate(&self) -> &Coordinate {
-        &self.robot.coordinate
+        self.runnable.get_coordinate()
     }
     fn get_coordinate_mut(&mut self) -> &mut Coordinate {
-        &mut self.robot.coordinate
+        self.runnable.get_coordinate_mut()
     }
 
     fn get_backpack(&self) -> &BackPack {
-        &self.robot.backpack
+        self.runnable.get_backpack()
     }
     fn get_backpack_mut(&mut self) -> &mut BackPack {
-        &mut self.robot.backpack
+        self.runnable.get_backpack_mut()
     }
 }

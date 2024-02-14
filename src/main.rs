@@ -16,10 +16,12 @@ use robotics_lib::{
     runner::{backpack::BackPack, Robot, Runnable, Runner},
     world::{coordinates::Coordinate, tile::Tile, world_generator::Generator, World},
 };
+use wrapper::RobotWrapper;
 
 mod gamepad;
 mod robot;
 pub mod visualizer;
+mod wrapper;
 
 struct State {
     // map: Vec<Vec<Tile>>,
@@ -36,7 +38,7 @@ impl EventHandler for State {
         let screen_height = ctx.gfx.window().inner_size().height as f32;
         if ctx.time.ticks() % 100 == 0 {
             if self.visualizer.event_queue().borrow_mut().pop().is_some() {
-                self.visualizer.handle_event();
+                self.visualizer.handle_event(&ctx.gfx);
             } else {
                 self.visualizer.next_tick();
             }
@@ -47,7 +49,7 @@ impl EventHandler for State {
             );
             // println!("Delta frame time: {:?} ", ctx.time.delta());
             // println!("Average FPS: {}", ctx.time.fps());
-            // println!("Origin: {:?}", self.visualizer.origin());
+            println!("Origin: {:?}", self.visualizer.origin());
             // println!("Scale: {:?}", self.visualizer.scale());
             // println!("Screen: {:?}", vec2(screen_width, screen_height));
         }
@@ -151,8 +153,15 @@ fn main() {
     let mut world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> = Rc::new(RefCell::new(None));
     let mut event_queue: Rc<RefCell<Vec<Event>>> = Rc::new(RefCell::new(Vec::new()));
 
+    let robot = Robot::new();
+    let mut my_robot = MyRobot::new(world_rc.clone(), event_queue.clone(), robot);
+    let mut wrapper = RobotWrapper::new(
+        world_rc.clone(),
+        Box::new(my_robot),
+    );
+
     let runner = Runner::new(
-        Box::new(MyRobot::new(world_rc.clone(), event_queue.clone())),
+        Box::new(wrapper),
         &mut world_generator,
     )
     .unwrap();
