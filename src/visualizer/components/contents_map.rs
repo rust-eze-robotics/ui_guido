@@ -5,32 +5,39 @@ use ggez::{
     glam::vec2,
     graphics::{Color, DrawParam, GraphicsContext, InstanceArray},
 };
-use robotics_lib::{event::events::Event, world::tile::Tile};
+use robotics_lib::world::tile::Tile;
 
 use crate::visualizer::textures::Texture;
 
 use super::{Component, CoordinatedInstance};
 
-pub(crate) struct ContentsMapComponent {
+/// The struct contains the state of the content map component.
+pub(in crate::visualizer) struct ContentsMapComponent {
     map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
     instances: HashMap<Texture, CoordinatedInstance>,
 }
 
-pub(crate) struct ContentsMapComponentParam {
-    pub scale: f32,
+/// The struct contains the parameters for drawing the component.
+pub(in crate::visualizer) struct ContentsMapComponentParam {
+    scale: f32,
 }
 
-pub(crate) enum ContentsMapComponentUpdateType {
+/// The union contains the types of updates for the component.
+pub(in crate::visualizer) enum ContentsMapComponentUpdateType {
     WorldVisibility(Vec<Vec<Option<Tile>>>),
     ContentChange(Tile, (usize, usize)),
 }
 
-pub(crate) struct ContentsMapComponentUpdateParam {
+/// The struct contains the parameters for updating the component.
+pub(in crate::visualizer) struct ContentsMapComponentUpdateParam {
     _type: ContentsMapComponentUpdateType,
 }
 
 impl ContentsMapComponent {
+    /// The constructor creates a new instance of the component from the shared reference to the
+    /// map.
     pub fn from_map(gfx: &impl Has<GraphicsContext>, map_rc: Rc<RefCell<Vec<Vec<Tile>>>>) -> Self {
+        // Fills the following hashmap with the instances of the textures for every tyle type.
         let mut instances = HashMap::new();
 
         map_rc
@@ -53,6 +60,8 @@ impl ContentsMapComponent {
                                     elements: Vec::new(),
                                 });
 
+                        // Pushes the draw param in the instance of the texture and adds the
+                        // coordinates to the elements vector.
                         instance.array.push(
                             DrawParam::new()
                                 .dest(vec2(image_x, image_y - offset_y))
@@ -66,17 +75,19 @@ impl ContentsMapComponent {
         Self { instances, map_rc }
     }
 
-    pub fn update_content(&mut self, tile: &Tile, coords: (usize, usize)) {
+    /// The function handles event of content change. Is called internally by the update method.
+    fn update_content(&mut self, tile: &Tile, coords: (usize, usize)) {
+        // Borrow the mutable reference to the map
         let mut map = self.map_rc.borrow_mut();
-        let y = coords.0;
-        let x = coords.1;
+        let y = coords.0; // row
+        let x = coords.1; // column
 
         let previous_texture = Texture::from_content(&map[y][x].content).unwrap();
 
         let current_texture = Texture::from_content(&tile.content).unwrap();
 
         if let Some(instance) = self.instances.get_mut(&previous_texture) {
-            // Get the position of the content in the instance array
+            // Gets the position of the content in the instance array.
             let element_position: usize = instance
                 .elements
                 .iter()
@@ -84,7 +95,7 @@ impl ContentsMapComponent {
                 .unwrap()
                 .clone();
 
-            // Get corresponding draw param
+            // Gets corresponding draw param.
             let draw_param = instance
                 .array
                 .instances()
@@ -92,7 +103,7 @@ impl ContentsMapComponent {
                 .unwrap()
                 .clone();
 
-            // Remove the draw param slicing the array
+            // Removes the draw param slicing the array.
             instance.array.set(
                 instance
                     .array
@@ -109,7 +120,7 @@ impl ContentsMapComponent {
                     .collect::<Vec<_>>(),
             );
 
-            // Push the draw param in the new instance of the texture
+            // Pushes the draw param in the new instance of the texture.
             self.instances
                 .get_mut(&current_texture)
                 .unwrap()
@@ -117,6 +128,7 @@ impl ContentsMapComponent {
                 .push(draw_param.clone());
         }
 
+        // Edits the content of the map.
         map[y][x].content = tile.content.clone();
     }
 }
@@ -130,12 +142,14 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
         _draw_param: DrawParam,
         component_param: ContentsMapComponentParam,
     ) -> Result<(), ggez::GameError> {
+        // Draws the instances of the textures.
         for (_texture, instance) in &self.instances {
             canvas.draw(
                 &instance.array,
                 DrawParam::new().scale(vec2(component_param.scale, component_param.scale)),
             );
         }
+
         Ok(())
     }
 
@@ -145,11 +159,15 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
     ) -> Result<(), ggez::GameError> {
         match update_param._type {
             ContentsMapComponentUpdateType::WorldVisibility(current_world) => {
+                // For every tile in the world, updates the corresponding draw param in the instance
                 for (y, row) in current_world.iter().enumerate() {
                     for (x, tile) in row.iter().enumerate() {
+                        // If the tile is not None, robots knows it and it's visible.
+                        // So, it updates the corrisponding the draw param.
                         if let Some(tile) = tile {
                             if let Some(texture) = Texture::from_content(&tile.content) {
                                 if let Some(instance) = self.instances.get_mut(&texture) {
+                                    // Gets the position of the considered content in the instance array.
                                     let element_position: usize = instance
                                         .elements
                                         .iter()
@@ -157,6 +175,7 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
                                         .unwrap()
                                         .clone();
 
+                                    // Gets the corresponding draw param from the instance array.
                                     let draw_param = instance
                                         .array
                                         .instances()
@@ -164,6 +183,8 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
                                         .unwrap()
                                         .clone();
 
+                                    // Updates the draw param in the instance array with the
+                                    // white color, which clears the previous grey effect.
                                     instance.array.update(
                                         element_position as u32,
                                         draw_param.color(Color::WHITE),
@@ -174,7 +195,6 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
                     }
                 }
             }
-
             ContentsMapComponentUpdateType::ContentChange(tile, coords) => {
                 self.update_content(&tile, coords);
             }
@@ -185,13 +205,15 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
 }
 
 impl ContentsMapComponentParam {
-    pub fn new(scale: f32) -> Self {
+    /// The constructor creates a new instance of the parameters for the component.
+    pub(in crate::visualizer) fn new(scale: f32) -> Self {
         Self { scale }
     }
 }
 
 impl ContentsMapComponentUpdateParam {
-    pub fn new(_type: ContentsMapComponentUpdateType) -> Self {
+    /// The constructor creates a new instance of the parameters for updating the component.
+    pub(in crate::visualizer) fn new(_type: ContentsMapComponentUpdateType) -> Self {
         Self { _type }
     }
 }
