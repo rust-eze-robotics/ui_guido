@@ -29,6 +29,7 @@ impl GamePad {
         vec2(self.offset_leftstick_x, self.offset_leftstick_y)
     }
 
+    #[allow(dead_code)]
     pub fn set_rightstick_x_offset(&mut self, offset_rightstick_x: f32) {
         self.offset_rightstick_x = -offset_rightstick_x * 5.0;
     }

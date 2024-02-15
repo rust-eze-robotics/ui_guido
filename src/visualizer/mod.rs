@@ -230,11 +230,6 @@ impl Visualizer {
         self.origin
     }
 
-    /// The function returns the reference to the scale of the visualizer.
-    pub fn scale(&self) -> f32 {
-        self.scale
-    }
-
     /// The function returns the shared reference to the event_queue of the visualizer.
     pub fn event_queue(&self) -> Rc<RefCell<Vec<Event>>> {
         self.event_queue_rc.clone()
