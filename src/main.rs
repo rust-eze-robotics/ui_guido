@@ -43,10 +43,6 @@ impl EventHandler for State {
                 self.visualizer.next_tick();
             }
 
-            println!(
-                "Robot: {:?}",
-                self.visualizer.runner().get_robot().get_coordinate()
-            );
             // println!("Delta frame time: {:?} ", ctx.time.delta());
             // println!("Average FPS: {}", ctx.time.fps());
             println!("Origin: {:?}", self.visualizer.origin());
@@ -168,19 +164,20 @@ fn main() {
 
     let map_rc = Rc::new(RefCell::new(map));
 
+    let visualizer = Visualizer::new(
+        &ctx,
+        runner,
+        world_rc.clone(),
+        event_queue.clone(),
+        map_rc.clone(),
+        spawn_point,
+        4.0,
+    );
+
     let mut state = State {
         world: world_rc.clone(),
         map: map_rc.clone(),
-        visualizer: Visualizer::new(
-            &ctx,
-            world_rc.clone(),
-            event_queue.clone(),
-            runner,
-            map_rc.clone(),
-            vec2(0.0, 0.0),
-            spawn_point,
-            4.0,
-        ),
+        visualizer,
         gamepad: GamePad::new(),
     };
 

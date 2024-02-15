@@ -94,8 +94,8 @@ impl TilesMapComponent {
 
         diagonal.iter().for_each(|(x, y)| {
             let texture = Texture::from_tile(&map[*y][*x]);
-            let image_x = (texture.width() * 0.5) * (map.len() - y + x - 1) as f32;
-            let image_y = ((texture.height() - 1.0) * 0.25) * (x + y) as f32;
+            let image_x = (Texture::width() * 0.5) * (map.len() - y + x - 1) as f32;
+            let image_y = ((Texture::height() - 1.0) * 0.25) * (x + y) as f32;
 
             let instance = diagonal_instances.get_mut(&texture).unwrap();
 
@@ -154,9 +154,9 @@ impl Component<TilesMapComponentParam, TilesMapComponentUpdateParam> for TilesMa
 
                     // Calculate the position of the tile in the matrix
                     let image_x =
-                        (Texture::from_tile(tile).width() * 0.5) * (map.len() - y + x - 1) as f32;
+                        (Texture::width() * 0.5) * (map.len() - y + x - 1) as f32;
                     let image_y =
-                        ((Texture::from_tile(tile).height() - 1.0) * 0.25) * (x + y) as f32;
+                        ((Texture::height() - 1.0) * 0.25) * (x + y) as f32;
 
                     // Get the position of the tile in the instance array
                     // Suppose that the tile exists in the elements array

@@ -64,7 +64,7 @@ impl Component<PlayerComponentParam, PlayerComponentUpdateParam> for PlayerCompo
 
         let player_x = (self.image.width() as f32 * 0.5)
             * (self.map_size.1 as usize - y + x - 1) as f32;
-        let player_y = ((PlayerComponent::texture().height() - 1.0) * 0.25) * (x + y) as f32;
+        let player_y = ((Texture::height() - 1.0) * 0.25) * (x + y) as f32;
         
         // println!("PlayerComponent::draw: player_x: {}, player_y: {}", player_x, player_y);
         canvas.draw(&self.image, draw_param

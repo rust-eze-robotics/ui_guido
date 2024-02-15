@@ -220,11 +220,11 @@ impl Texture {
         ]
     }
 
-    pub fn width(&self) -> f32 {
+    pub fn width() -> f32 {
         16.0
     }
 
-    pub fn height(&self) -> f32 {
+    pub fn height() -> f32 {
         16.0
     }
 }

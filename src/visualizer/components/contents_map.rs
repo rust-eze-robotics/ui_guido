@@ -48,8 +48,8 @@ impl ContentsMapComponent {
             .for_each(|(y, row)| {
                 row.iter().enumerate().for_each(|(x, tile)| {
                     if let Some(texture) = Texture::from_content(&tile.content) {
-                        let image_x = (texture.width() * 0.5) * (row.len() - y + x - 1) as f32;
-                        let image_y = ((texture.height() - 1.0) * 0.25) * (x + y) as f32;
+                        let image_x = (Texture::width() * 0.5) * (row.len() - y + x - 1) as f32;
+                        let image_y = ((Texture::height() - 1.0) * 0.25) * (x + y) as f32;
                         let offset_y = if tile.elevation < 3 { 2.0 } else { 6.0 };
 
                         let instance =
