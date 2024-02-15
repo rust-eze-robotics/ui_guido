@@ -1,9 +1,11 @@
 [package]
 name = "ui_guido"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["Andreolli Davide"]
+description = "An alternatice UI for runnable robotics"
+repository = "https://github.com/rust-eze-robotics/ui_guido"
+keywords = ["robotics_lib", "ui", "ggez", "midgard"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 ggez = "0.9.3"
