@@ -9,16 +9,11 @@ use robotics_lib::{event::events::Event, world::tile::Tile};
 
 use crate::visualizer::textures::Texture;
 
-use super::Component;
+use super::{Component, CoordinatedInstance};
 
 pub(crate) struct ContentsMapComponent {
     map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
-    instances: HashMap<Texture, ContentInstance>,
-}
-
-struct ContentInstance {
-    array: InstanceArray,
-    elements: Vec<(usize, usize)>,
+    instances: HashMap<Texture, CoordinatedInstance>,
 }
 
 pub(crate) struct ContentsMapComponentParam {
@@ -32,8 +27,6 @@ pub(crate) enum ContentsMapComponentUpdateType {
 
 pub(crate) struct ContentsMapComponentUpdateParam {
     _type: ContentsMapComponentUpdateType,
-    // tile: Tile,
-    // coords: (usize, usize),
 }
 
 impl ContentsMapComponent {
@@ -53,10 +46,12 @@ impl ContentsMapComponent {
                         let offset_y = if tile.elevation < 3 { 2.0 } else { 6.0 };
 
                         let instance =
-                            instances.entry(texture).or_insert_with(|| ContentInstance {
-                                array: InstanceArray::new(gfx, texture.get_image(gfx)),
-                                elements: Vec::new(),
-                            });
+                            instances
+                                .entry(texture)
+                                .or_insert_with(|| CoordinatedInstance {
+                                    array: InstanceArray::new(gfx, texture.get_image(gfx)),
+                                    elements: Vec::new(),
+                                });
 
                         instance.array.push(
                             DrawParam::new()
@@ -72,7 +67,6 @@ impl ContentsMapComponent {
     }
 
     pub fn update_content(&mut self, tile: &Tile, coords: (usize, usize)) {
-
         let mut map = self.map_rc.borrow_mut();
         let y = coords.0;
         let x = coords.1;
@@ -149,10 +143,8 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
         &mut self,
         update_param: ContentsMapComponentUpdateParam,
     ) -> Result<(), ggez::GameError> {
-
         match update_param._type {
             ContentsMapComponentUpdateType::WorldVisibility(current_world) => {
-                
                 for (y, row) in current_world.iter().enumerate() {
                     for (x, tile) in row.iter().enumerate() {
                         if let Some(tile) = tile {
@@ -174,8 +166,7 @@ impl Component<ContentsMapComponentParam, ContentsMapComponentUpdateParam>
 
                                     instance.array.update(
                                         element_position as u32,
-                                        draw_param
-                                            .color(Color::WHITE),
+                                        draw_param.color(Color::WHITE),
                                     );
                                 }
                             }
