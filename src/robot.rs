@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, collections::VecDeque};
 
 use robotics_lib::{
     energy::Energy,
@@ -12,14 +12,14 @@ use rust_eze_tomtom::TomTom;
 
 pub struct MyRobot {
     pub world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-    pub event_queue: Rc<RefCell<Vec<Event>>>,
+    pub event_queue: Rc<RefCell<VecDeque<Event>>>,
     robot: Robot,
 }
 
 impl MyRobot {
     pub fn new(
         world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-        event_queue: Rc<RefCell<Vec<Event>>>,
+        event_queue: Rc<RefCell<VecDeque<Event>>>,
         robot: Robot,
     ) -> Self {
         MyRobot {
@@ -52,7 +52,7 @@ impl Runnable for MyRobot {
     }
 
     fn handle_event(&mut self, event: Event) {
-        self.event_queue.borrow_mut().push(event);
+        self.event_queue.borrow_mut().push_back(event);
     }
 
     fn get_energy(&self) -> &Energy {

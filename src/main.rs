@@ -1,4 +1,4 @@
-use std::{cell::RefCell, env, path::PathBuf, rc::Rc};
+use std::{cell::RefCell, env, path::PathBuf, rc::Rc, collections::VecDeque};
 
 use gamepad::GamePad;
 use ggez::event::{Axis, EventHandler};
@@ -26,7 +26,7 @@ struct State {
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
         if ctx.time.ticks() % 100 == 0 {
-            if self.visualizer.event_queue().borrow_mut().pop().is_some() {
+            if self.visualizer.event_queue().borrow_mut().pop_front().is_some() {
                 self.visualizer.handle_event(&ctx.gfx)?;
             } else {
                 if let Err(error) = self.visualizer.next_tick() {
@@ -115,7 +115,7 @@ fn main() {
     let (map, spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
 
     let world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> = Rc::new(RefCell::new(None));
-    let event_queue_rc: Rc<RefCell<Vec<Event>>> = Rc::new(RefCell::new(Vec::new()));
+    let event_queue_rc: Rc<RefCell<VecDeque<Event>>> = Rc::new(RefCell::new(VecDeque::new()));
     let map_rc = Rc::new(RefCell::new(map));
 
     // Creates the robot and the wrapper.

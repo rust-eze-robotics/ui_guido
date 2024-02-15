@@ -2,6 +2,7 @@ mod components;
 mod textures;
 
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::rc::Rc;
 
 use ggez::graphics::{DrawParam, Rect};
@@ -30,7 +31,7 @@ use self::components::Component;
 pub struct Visualizer {
     // Shared states
     runner: Runner,
-    event_queue_rc: Rc<RefCell<Vec<Event>>>,
+    event_queue_rc: Rc<RefCell<VecDeque<Event>>>,
     world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
 
     // Visualization variables
@@ -50,7 +51,7 @@ impl Visualizer {
         gfx: &impl Has<GraphicsContext>,
         runner: Runner,
         world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-        event_queue_rc: Rc<RefCell<Vec<Event>>>,
+        event_queue_rc: Rc<RefCell<VecDeque<Event>>>,
         map_rc: Rc<RefCell<Vec<Vec<Tile>>>>,
         initial_position: (usize, usize),
         initial_scale: f32,
@@ -203,7 +204,7 @@ impl Visualizer {
             ))?;
 
         // Discards events while it doesn't find an Event::Moved or an Event::TileContentUpdated
-        while let Some(event) = self.event_queue().borrow_mut().pop() {
+        while let Some(event) = self.event_queue().borrow_mut().pop_front() {
             match event {
                 Event::Moved(_tile, coords) => {
                     self.player_component
@@ -231,7 +232,7 @@ impl Visualizer {
     }
 
     /// The function returns the shared reference to the event_queue of the visualizer.
-    pub fn event_queue(&self) -> Rc<RefCell<Vec<Event>>> {
+    pub fn event_queue(&self) -> Rc<RefCell<VecDeque<Event>>> {
         self.event_queue_rc.clone()
     }
 }
