@@ -277,7 +277,6 @@ impl Component<TilesMapComponentParam, TilesMapComponentUpdateParam> for TilesMa
 }
 
 impl TilesMapComponentParam {
-
     /// The constructor creates a new instance of the draw parameters.
     pub(in crate::visualizer) fn new(origin: Vec2, window_size: Vec2, scale: f32) -> Self {
         Self {
@@ -289,7 +288,6 @@ impl TilesMapComponentParam {
 }
 
 impl TilesMapComponentUpdateParam {
-
     /// The constructor creates a new instance of the update parameters.
     pub(in crate::visualizer) fn new(current_map: Vec<Vec<Option<Tile>>>) -> Self {
         Self { current_map }

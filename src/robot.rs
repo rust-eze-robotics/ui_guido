@@ -3,9 +3,9 @@ use std::{cell::RefCell, rc::Rc};
 use robotics_lib::{
     energy::Energy,
     event::events::Event,
-    interface::{go, robot_map, Direction},
+    interface::robot_map,
     runner::{backpack::BackPack, Robot, Runnable},
-    world::{coordinates::Coordinate, tile::Tile, World},
+    world::{coordinates::Coordinate, tile::Tile},
 };
 use rust_eze_spotlight::Spotlight;
 use rust_eze_tomtom::TomTom;
@@ -28,33 +28,26 @@ impl MyRobot {
             robot,
         }
     }
-
-    pub fn world(&self) -> Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> {
-        self.world.clone()
-    }
 }
 
 impl Runnable for MyRobot {
     fn process_tick(&mut self, world: &mut robotics_lib::world::World) {
-        Spotlight::illuminate(self, world, 10);
-        TomTom::go_to_tile(
+        Spotlight::illuminate(self, world, 10).unwrap_or_else(|error| {
+            println!("Spotlight error: {:?}", error);
+        });
+
+        if let Err(error) = TomTom::go_to_tile(
             self,
             world,
             false,
             None,
             Some(rust_eze_tomtom::plain::PlainContent::Bush),
-        );
-        //
-        // let directions = vec![
-        //     Direction::Up,
-        //     Direction::Right,
-        //     Direction::Down,
-        //     Direction::Left,
-        // ];
-        // // Pick a random direction 
-        // let direction = &directions[rand::random::<usize>() % 4];
-        // go(self, world, direction.clone());
+        ) {
+            println!("TomTom error: {:?}", error);
+        }
 
+        // Required world update to the visualizer. See the RunnableWrapper
+        // documentation for more information.
         self.world.replace(Some(robot_map(world).unwrap()));
     }
 
@@ -65,6 +58,7 @@ impl Runnable for MyRobot {
     fn get_energy(&self) -> &Energy {
         &self.robot.energy
     }
+
     fn get_energy_mut(&mut self) -> &mut Energy {
         &mut self.robot.energy
     }
@@ -72,6 +66,7 @@ impl Runnable for MyRobot {
     fn get_coordinate(&self) -> &Coordinate {
         &self.robot.coordinate
     }
+
     fn get_coordinate_mut(&mut self) -> &mut Coordinate {
         &mut self.robot.coordinate
     }
@@ -79,6 +74,7 @@ impl Runnable for MyRobot {
     fn get_backpack(&self) -> &BackPack {
         &self.robot.backpack
     }
+
     fn get_backpack_mut(&mut self) -> &mut BackPack {
         &mut self.robot.backpack
     }

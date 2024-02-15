@@ -9,18 +9,18 @@ use robotics_lib::{
 };
 
 /// The structure implements the Runnable trait and works as intermediary
-/// between the robot given and the visualizer. It is used to update the 
+/// between the robot given and the visualizer. It is used to update the
 /// visualizer's world state and to process the robot's actions.
 ///
-/// Visualizer requires that the given Runner has internally a RunnableWrapper 
-/// instance as the robot. 
+/// Visualizer requires that the given Runner has internally a RunnableWrapper
+/// instance as the robot.
 /// Also, user robot, given for parameter 'runnable', MUST push events to the
 /// given event queue.
 ///
-/// If the previous rules are not followed, the visualizer will not work as 
+/// If the previous rules are not followed, the visualizer will not work as
 /// expected.
 ///
-/// These restrictions are a limitation imposed by the robotic library, 
+/// These restrictions are a limitation imposed by the robotic library,
 /// unfortunately.
 pub struct RunnableWrapper {
     world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
@@ -28,7 +28,6 @@ pub struct RunnableWrapper {
 }
 
 impl RunnableWrapper {
-
     /// The constructor creates a new robot wrapper structure.
     pub fn new(
         world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
@@ -39,7 +38,6 @@ impl RunnableWrapper {
 }
 
 impl Runnable for RunnableWrapper {
-
     fn process_tick(&mut self, world: &mut robotics_lib::world::World) {
         // Process the robot's action and replace the shared world reference
         // content with the latest one.
@@ -70,7 +68,7 @@ impl Runnable for RunnableWrapper {
     fn get_backpack(&self) -> &BackPack {
         self.runnable.get_backpack()
     }
-    
+
     fn get_backpack_mut(&mut self) -> &mut BackPack {
         self.runnable.get_backpack_mut()
     }

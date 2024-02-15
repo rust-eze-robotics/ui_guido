@@ -1,54 +1,44 @@
 use std::{cell::RefCell, env, path::PathBuf, rc::Rc};
 
 use gamepad::GamePad;
-use ggez::{
-    event::{Axis, EventHandler},
-    glam::vec2,
-};
+use ggez::event::{Axis, EventHandler};
 use midgard::world_generator::{WorldGenerator, WorldGeneratorParameters};
 use robot::MyRobot;
 use visualizer::Visualizer;
 
 use robotics_lib::{
-    energy::Energy,
     event::events::Event,
-    interface::{go, robot_map, robot_view, Direction},
-    runner::{backpack::BackPack, Robot, Runnable, Runner},
-    world::{coordinates::Coordinate, tile::Tile, world_generator::Generator, World},
+    runner::{Robot, Runner},
+    world::{tile::Tile, world_generator::Generator},
 };
-use wrapper::RobotWrapper;
+use wrapper::RunnableWrapper;
 
 mod gamepad;
 mod robot;
-pub mod visualizer;
+mod visualizer;
 mod wrapper;
 
 struct State {
-    // map: Vec<Vec<Tile>>,
-    map: Rc<RefCell<Vec<Vec<Tile>>>>,
-    world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-    // image_scale: f32,
     visualizer: Visualizer,
     gamepad: GamePad,
 }
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
-        let screen_width = ctx.gfx.window().inner_size().width as f32;
-        let screen_height = ctx.gfx.window().inner_size().height as f32;
         if ctx.time.ticks() % 100 == 0 {
             if self.visualizer.event_queue().borrow_mut().pop().is_some() {
-                self.visualizer.handle_event(&ctx.gfx);
+                self.visualizer.handle_event(&ctx.gfx)?;
             } else {
-                self.visualizer.next_tick();
+                if let Err(error) = self.visualizer.next_tick() {
+                    return Err(ggez::GameError::CustomError(format!(
+                        "Robot tick thrown the following error: {:?}",
+                        error
+                    )));
+                }
             }
-
-            // println!("Delta frame time: {:?} ", ctx.time.delta());
-            // println!("Average FPS: {}", ctx.time.fps());
-            println!("Origin: {:?}", self.visualizer.origin());
-            // println!("Scale: {:?}", self.visualizer.scale());
-            // println!("Screen: {:?}", vec2(screen_width, screen_height));
         }
+
+        // Sends user input to the visualizer
         self.visualizer
             .add_offset(self.gamepad.get_leftstick_offset());
         self.visualizer
@@ -61,26 +51,6 @@ impl EventHandler for State {
         self.visualizer.draw(ctx)?;
         Ok(())
     }
-    //
-    // fn mouse_wheel_event(&mut self, _ctx: &mut ggez::Context, _x: f32, _y: f32) -> Result<(), ggez::GameError> {
-    //     if (_y > 0.0) {
-    //         self.visualizer.increase_scale();
-    //     } else {
-    //         self.visualizer.decrease_scale();
-    //     }
-    //
-    //     Ok(())
-    // }
-    //
-    // fn key_down_event(
-    //     &mut self,
-    //     ctx: &mut ggez::Context,
-    //     input: ggez::input::keyboard::KeyInput,
-    //     _repeated: bool,
-    // ) -> Result<(), ggez::GameError> {
-    //
-    //     Ok(())
-    // }
 
     fn gamepad_axis_event(
         &mut self,
@@ -96,18 +66,26 @@ impl EventHandler for State {
         } else if axis == Axis::RightStickY {
             self.gamepad.set_rightstick_y_offset(value);
         }
+
         Ok(())
     }
 }
 
 fn main() {
-    let (ctx, event_loop) = ggez::ContextBuilder::new("robotics", "ggez")
+    // Create a new context and event loop.
+    let (ctx, event_loop) = ggez::ContextBuilder::new("ui_guido", "Davide Andreolli")
         .window_setup(
             ggez::conf::WindowSetup::default()
-                .title("Robotics")
-                .vsync(true),
+                .title("Guido - An alternative UI for runnable robotics")
+                .vsync(true)
+                .icon("/icon.png"),
         )
-        .window_mode(ggez::conf::WindowMode::default().dimensions(1600.0, 1200.0))
+        .window_mode(
+            ggez::conf::WindowMode::default()
+                .dimensions(1600.0, 1200.0)
+                .resizable(true)
+                .transparent(true),
+        )
         .add_resource_path(match env::var("CARGO_MANIFEST_DIR") {
             Ok(manifest_dir) => {
                 let mut path = PathBuf::from(manifest_dir);
@@ -117,10 +95,13 @@ fn main() {
             Err(_) => PathBuf::from("./resources"),
         })
         .build()
-        .unwrap();
+        .unwrap_or_else(|error| {
+            panic!("Error while building the context: {:?}", error);
+        });
 
+    // Creates the world generator parameters.
     let params = WorldGeneratorParameters {
-        seed: 1,
+        // seed: 1,     // Uncomment to have a deterministic world.
         world_size: 200,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
@@ -129,62 +110,36 @@ fn main() {
         ..Default::default()
     };
 
+    // Generates the world.
     let mut world_generator = WorldGenerator::new(params);
     let (map, spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
 
-    // let state = State {
-    //     image: textures::TileTypeTexture::from_tiletype(
-    //         &ctx,
-    //         &robotics_lib::world::tile::TileType::Street,
-    //     )
-    //     .half,
-    //     map_images: textures::load_tiles_matrix_textures(&ctx, &map),
-    //     map,
-    //     image_scale: 4.0
-    // };
-    //
-    //
-    //
-
-    let mut world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> = Rc::new(RefCell::new(None));
-    let mut event_queue: Rc<RefCell<Vec<Event>>> = Rc::new(RefCell::new(Vec::new()));
-
-    let robot = Robot::new();
-    let mut my_robot = MyRobot::new(world_rc.clone(), event_queue.clone(), robot);
-    let mut wrapper = RobotWrapper::new(
-        world_rc.clone(),
-        Box::new(my_robot),
-    );
-
-    let runner = Runner::new(
-        Box::new(wrapper),
-        &mut world_generator,
-    )
-    .unwrap();
-
+    let world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> = Rc::new(RefCell::new(None));
+    let event_queue_rc: Rc<RefCell<Vec<Event>>> = Rc::new(RefCell::new(Vec::new()));
     let map_rc = Rc::new(RefCell::new(map));
 
+    // Creates the robot and the wrapper.
+    let robot = Robot::new();
+    let my_robot = MyRobot::new(world_rc.clone(), event_queue_rc.clone(), robot);
+    let wrapper = RunnableWrapper::new(world_rc.clone(), Box::new(my_robot));
+    let runner = Runner::new(Box::new(wrapper), &mut world_generator).unwrap();
+
+    // Creates the visualizer.
     let visualizer = Visualizer::new(
         &ctx,
         runner,
         world_rc.clone(),
-        event_queue.clone(),
+        event_queue_rc.clone(),
         map_rc.clone(),
         spawn_point,
         4.0,
     );
 
-    let mut state = State {
-        world: world_rc.clone(),
-        map: map_rc.clone(),
+    let state = State {
         visualizer,
         gamepad: GamePad::new(),
     };
 
-    // state.visualizer.set_center(&ctx, vec2(0.0, 0.0));
-    // state
-    //     .visualizer
-    //     .set_center(&ctx, vec2(0.0, (map.len() / 2) as f32));
-
+    // Runs the event loop.
     ggez::event::run(ctx, event_loop, state);
 }

@@ -25,7 +25,6 @@ pub(in crate::visualizer) struct PlayerComponentUpdateParam {
 }
 
 impl PlayerComponent {
-
     /// The constructor creates a new instance of the player component.
     pub(crate) fn new(
         gfx: &impl Has<GraphicsContext>,
@@ -41,16 +40,14 @@ impl PlayerComponent {
 }
 
 impl Component<PlayerComponentParam, PlayerComponentUpdateParam> for PlayerComponent {
-
     fn draw(
         &self,
         canvas: &mut ggez::graphics::Canvas,
         draw_param: ggez::graphics::DrawParam,
         component_param: PlayerComponentParam,
     ) -> Result<(), ggez::GameError> {
-
-        let y = self.position.0 as usize;   // row
-        let x = self.position.1 as usize;   // column
+        let y = self.position.0 as usize; // row
+        let x = self.position.1 as usize; // column
         let scale = component_param.scale;
 
         let player_x =
@@ -68,7 +65,6 @@ impl Component<PlayerComponentParam, PlayerComponentUpdateParam> for PlayerCompo
     }
 
     fn update(&mut self, update_param: PlayerComponentUpdateParam) -> Result<(), ggez::GameError> {
-        
         // Updates the position of the player component.
         self.position = update_param.position;
         Ok(())
@@ -76,7 +72,6 @@ impl Component<PlayerComponentParam, PlayerComponentUpdateParam> for PlayerCompo
 }
 
 impl PlayerComponentParam {
-
     /// The constructor creates a new instance of the player component parameters.
     pub(crate) fn new(scale: f32) -> Self {
         Self { scale }
@@ -84,7 +79,6 @@ impl PlayerComponentParam {
 }
 
 impl PlayerComponentUpdateParam {
-
     /// The constructor creates a new instance of the player component update parameters.
     pub(crate) fn new(position: (usize, usize)) -> Self {
         Self { position }
