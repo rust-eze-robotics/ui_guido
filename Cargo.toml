@@ -2,7 +2,7 @@
 name = "ui_guido"
 version = "1.0.0"
 authors = ["Andreolli Davide"]
-description = "An alternatice UI for runnable robotics"
+description = "An alternative UI for runnable robotics"
 repository = "https://github.com/rust-eze-robotics/ui_guido"
 keywords = ["robotics_lib", "ui", "ggez", "midgard"]
 edition = "2021"
