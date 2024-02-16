@@ -102,7 +102,7 @@ fn main() {
     // Creates the world generator parameters.
     let params = WorldGeneratorParameters {
         // seed: 1,     // Uncomment to have a deterministic world.
-        world_size: 200,
+        world_size: 40,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
