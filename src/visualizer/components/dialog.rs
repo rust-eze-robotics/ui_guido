@@ -26,10 +26,8 @@ pub(in crate::visualizer) struct DialogComponentUpdateParam {
 }
 
 impl DialogComponent {
-
     /// The constructor creates a new instance of the dialog component.
     pub(crate) fn new(gfx: &impl Has<GraphicsContext>, text: String) -> Self {
-        
         // Builds background mesh
         let mut mesh_builder = MeshBuilder::new();
         mesh_builder

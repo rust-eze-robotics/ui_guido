@@ -1,11 +1,8 @@
-use std::{cell::RefCell, collections::VecDeque, rc::Rc};
-
 use robotics_lib::{
     energy::Energy,
     event::events::Event,
-    interface::robot_map,
     runner::{backpack::BackPack, Robot, Runnable},
-    world::{coordinates::Coordinate, tile::Tile},
+    world::coordinates::Coordinate,
 };
 use rust_eze_spotlight::Spotlight;
 use rust_eze_tomtom::TomTom;
@@ -17,14 +14,8 @@ pub struct MyRobot {
 }
 
 impl MyRobot {
-    pub fn new(
-        runnable_ui: Box<dyn RunnableUi>,
-        robot: Robot,
-    ) -> Self {
-        MyRobot {
-            runnable_ui,
-            robot,
-        }
+    pub fn new(runnable_ui: Box<dyn RunnableUi>, robot: Robot) -> Self {
+        MyRobot { runnable_ui, robot }
     }
 }
 
@@ -44,8 +35,8 @@ impl Runnable for MyRobot {
             println!("TomTom error: {:?}", error);
         }
 
-        // Required world update to the visualizer. See the RunnableWrapper
-        // documentation for more information.
+        // Required world update to the visualizer. See ui_lib::RunnableUi
+        // documentation for more informations.
         self.runnable_ui.process_tick(world);
     }
 
