@@ -1,6 +1,7 @@
 use ggez::graphics::{Canvas, DrawParam, InstanceArray};
 
 pub(super) mod contents_map;
+pub(super) mod dialog;
 pub(super) mod player;
 pub(super) mod tails_map;
 

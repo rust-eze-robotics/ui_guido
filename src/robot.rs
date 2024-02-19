@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, collections::VecDeque};
+use std::{cell::RefCell, collections::VecDeque, rc::Rc};
 
 use robotics_lib::{
     energy::Energy,

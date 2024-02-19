@@ -1,7 +1,10 @@
-use std::{cell::RefCell, env, path::PathBuf, rc::Rc, collections::VecDeque};
+use std::{cell::RefCell, collections::VecDeque, env, path::PathBuf, rc::Rc};
 
 use gamepad::GamePad;
-use ggez::event::{Axis, EventHandler};
+use ggez::{
+    event::{Axis, EventHandler},
+    graphics::FontData,
+};
 use midgard::world_generator::{WorldGenerator, WorldGeneratorParameters};
 use robot::MyRobot;
 use visualizer::Visualizer;
@@ -26,7 +29,13 @@ struct State {
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
         if ctx.time.ticks() % 100 == 0 {
-            if self.visualizer.event_queue().borrow_mut().pop_front().is_some() {
+            if self
+                .visualizer
+                .event_queue()
+                .borrow_mut()
+                .pop_front()
+                .is_some()
+            {
                 self.visualizer.handle_event(&ctx.gfx)?;
             } else {
                 if let Err(error) = self.visualizer.next_tick() {
@@ -73,7 +82,7 @@ impl EventHandler for State {
 
 fn main() {
     // Create a new context and event loop.
-    let (ctx, event_loop) = ggez::ContextBuilder::new("ui_guido", "Davide Andreolli")
+    let (mut ctx, event_loop) = ggez::ContextBuilder::new("ui_guido", "Davide Andreolli")
         .window_setup(
             ggez::conf::WindowSetup::default()
                 .title("Guido - An alternative UI for runnable robotics")
@@ -99,10 +108,15 @@ fn main() {
             panic!("Error while building the context: {:?}", error);
         });
 
+    ctx.gfx.add_font(
+        "kode",
+        FontData::from_path(&ctx, "/fonts/kode.ttf").unwrap(),
+    );
+
     // Creates the world generator parameters.
     let params = WorldGeneratorParameters {
         // seed: 1,     // Uncomment to have a deterministic world.
-        world_size: 40,
+        world_size: 30,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
