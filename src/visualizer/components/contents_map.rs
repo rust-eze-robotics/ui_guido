@@ -82,10 +82,11 @@ impl ContentsMapComponent {
         let y = coords.0; // row
         let x = coords.1; // column
 
-        let previous_texture = Texture::from_content(&map[y][x].content).unwrap();
+        let previous_texture = Texture::from_content(&map[y][x].content);
 
-        let current_texture = Texture::from_content(&tile.content).unwrap();
+        let current_texture = Texture::from_content(&tile.content);
 
+        if let (Some(previous_texture), Some(current_texture)) = (previous_texture, current_texture) {
         if let Some(instance) = self.instances.get_mut(&previous_texture) {
             // Gets the position of the content in the instance array.
             let element_position: usize = instance
@@ -130,6 +131,8 @@ impl ContentsMapComponent {
 
         // Edits the content of the map.
         map[y][x].content = tile.content.clone();
+        }
+        
     }
 }
 

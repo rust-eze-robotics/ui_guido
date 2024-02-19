@@ -3,10 +3,11 @@ use std::{cell::RefCell, collections::VecDeque, env, path::PathBuf, rc::Rc};
 use gamepad::GamePad;
 use ggez::{
     event::{Axis, EventHandler},
-    graphics::FontData,
+    graphics::FontData, glam::vec2,
 };
 use midgard::world_generator::{WorldGenerator, WorldGeneratorParameters};
 use robot::MyRobot;
+use rusteze_ai_artemisia::ArtemisIA;
 use visualizer::Visualizer;
 
 use robotics_lib::{
@@ -113,10 +114,12 @@ fn main() {
         FontData::from_path(&ctx, "/fonts/kode.ttf").unwrap(),
     );
 
+    let world_size = 256;
+
     // Creates the world generator parameters.
     let params = WorldGeneratorParameters {
         // seed: 1,     // Uncomment to have a deterministic world.
-        world_size: 30,
+        world_size,
         amount_of_rivers: Some(4.0),
         amount_of_streets: Some(3.0),
         amount_of_teleports: Some(2.0),
@@ -133,14 +136,17 @@ fn main() {
     let map_rc = Rc::new(RefCell::new(map));
 
     // Creates the robot and the wrapper.
-    let robot = Robot::new();
     let runnable_ui = UiWrapper::new(event_queue_rc.clone(), world_rc.clone());
 
-    let my_robot = MyRobot::new(Box::new(runnable_ui), robot);
+    // let my_robot = MyRobot::new(Box::new(runnable_ui), robot);
+    let my_robot = ArtemisIA::new(world_size, Box::new(runnable_ui));  
+
+
+
     let runner = Runner::new(Box::new(my_robot), &mut world_generator).unwrap();
 
     // Creates the visualizer.
-    let visualizer = Visualizer::new(
+    let mut visualizer = Visualizer::new(
         &ctx,
         runner,
         world_rc.clone(),
@@ -149,6 +155,8 @@ fn main() {
         spawn_point,
         4.0,
     );
+
+    visualizer.set_center(&ctx.gfx, vec2(spawn_point.1 as f32, spawn_point.0 as f32));
 
     let state = State {
         visualizer,

@@ -16,3 +16,4 @@ rust_eze_spotlight = { version = "1.1.1", registry = "kellnr" }
 rust_eze_tomtom = { version = "1.1.7", registry = "kellnr" }
 ui_lib = { git = "https://github.com/rust-eze-robotics/ui_lib", branch = "main" }
 
+rusteze_ai_artemisia = { git = "https://github.com/rust-eze-robotics/ai_artemisia", branch = "main" }

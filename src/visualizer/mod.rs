@@ -144,7 +144,7 @@ impl Visualizer {
 
     /// Add zooming to the visualizer.
     pub fn add_scale(&mut self, gfx: &impl Has<GraphicsContext>, scale: f32) {
-        if self.scale + scale * 0.01 > 0.5 && self.scale + scale * 0.01 < 4.0 {
+        if self.scale + scale * 0.01 > 0.5 && self.scale + scale * 0.01 < 6.0 {
             let screen_width = gfx.retrieve().window().inner_size().width as f32;
             let screen_height = gfx.retrieve().window().inner_size().height as f32;
 
@@ -194,8 +194,6 @@ impl Visualizer {
     /// all.
     pub fn handle_event(&mut self, gfx: &impl Has<GraphicsContext>) -> GameResult {
         
-        
-
         while let Some(event) = self.event_queue().borrow_mut().pop_front() {
 
             self.tiles_map_component
