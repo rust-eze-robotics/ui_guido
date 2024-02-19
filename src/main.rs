@@ -28,7 +28,7 @@ struct State {
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
-        if ctx.time.ticks() % 100 == 0 {
+        if ctx.time.ticks() % 50 == 0 {
             if self
                 .visualizer
                 .event_queue()

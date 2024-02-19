@@ -193,41 +193,46 @@ impl Visualizer {
     /// If visualizer doesn't have any knowledge about the robot's known tiles, it will hide them
     /// all.
     pub fn handle_event(&mut self, gfx: &impl Has<GraphicsContext>) -> GameResult {
-        self.tiles_map_component
-            .update(TilesMapComponentUpdateParam::new(
-                self.world_rc.borrow().clone().unwrap_or(vec![
-                    vec![None; self.map_size.x as usize];
-                    self.map_size.y as usize
-                ]),
-            ))?;
+        
+        
 
-        self.contents_map_component
-            .update(ContentsMapComponentUpdateParam::new(
-                ContentsMapComponentUpdateType::WorldVisibility(
+        while let Some(event) = self.event_queue().borrow_mut().pop_front() {
+
+            self.tiles_map_component
+                .update(TilesMapComponentUpdateParam::new(
                     self.world_rc.borrow().clone().unwrap_or(vec![
-                        vec![
-                            None;
-                            self.map_size.x as usize
-                        ];
+                        vec![None; self.map_size.x as usize];
                         self.map_size.y as usize
                     ]),
-                ),
-            ))?;
+                ))?;
 
-        // Discards events while it doesn't find an Event::Moved or an Event::TileContentUpdated
-        if let Some(event) = self.event_queue().borrow_mut().pop_front() {
+            self.contents_map_component
+                .update(ContentsMapComponentUpdateParam::new(
+                    ContentsMapComponentUpdateType::WorldVisibility(
+                        self.world_rc.borrow().clone().unwrap_or(vec![
+                            vec![
+                                None;
+                                self.map_size.x as usize
+                            ];
+                            self.map_size.y as usize
+                        ]),
+                    ),
+                ))?;
+
             match event {
                 Event::Ready => {
                     self.dialog_component
                         .update(DialogComponentUpdateParam::new(
                             "Robot is is loaded like a spring!".to_string(),
                         ))?;
+                    break;
                 }
                 Event::Terminated => {
                     self.dialog_component
                         .update(DialogComponentUpdateParam::new(
                             "Great! Robot has been terminated!".to_string(),
                         ))?;
+                    break;
                 }
                 Event::TimeChanged(environment) => {
                     self.dialog_component
@@ -235,6 +240,7 @@ impl Visualizer {
                             "Time has changed. It's {}",
                             environment.get_time_of_day_string()
                         )))?;
+                    break;
                 }
                 Event::DayChanged(day) => {
                     self.dialog_component
@@ -242,18 +248,12 @@ impl Visualizer {
                             "The day has changed. Now is {:?}",
                             day
                         )))?;
+                    break;
                 }
                 Event::EnergyRecharged(energy) => {
                     self.dialog_component
                         .update(DialogComponentUpdateParam::new(format!(
-                            "Bloooop! Energy has increased. The robot's total energy is {:?}",
-                            energy
-                        )))?;
-                }
-                Event::EnergyConsumed(energy) => {
-                    self.dialog_component
-                        .update(DialogComponentUpdateParam::new(format!(
-                            "The energy has decreased. The robot's total energy is {:?}",
+                            "Bloooop! Energy has increased by {:?}",
                             energy
                         )))?;
                 }
@@ -268,6 +268,7 @@ impl Visualizer {
                         )))?;
 
                     self.set_center(gfx, vec2(coords.1 as f32, coords.0 as f32));
+                    break;
                 }
                 Event::TileContentUpdated(tile, coords) => {
                     self.dialog_component
@@ -280,6 +281,8 @@ impl Visualizer {
                         .update(ContentsMapComponentUpdateParam::new(
                             ContentsMapComponentUpdateType::ContentChange(tile, coords),
                         ))?;
+                    
+                    break;
                 }
                 Event::AddedToBackpack(content, _count) => {
                     self.dialog_component
@@ -287,6 +290,8 @@ impl Visualizer {
                             "The content {:?} has been added to the backpack",
                             content
                         )))?;
+
+                    break;
                 }
                 Event::RemovedFromBackpack(content, _count) => {
                     self.dialog_component
@@ -294,7 +299,9 @@ impl Visualizer {
                             "The content {:?} has been removed from the backpack",
                             content
                         )))?;
+                    break;
                 }
+                _ => {}
             };
         }
 

@@ -1,3 +1,4 @@
+use rand::seq::SliceRandom;
 use robotics_lib::{
     energy::Energy,
     event::events::Event,
@@ -5,7 +6,7 @@ use robotics_lib::{
     world::coordinates::Coordinate,
 };
 use rust_eze_spotlight::Spotlight;
-use rust_eze_tomtom::TomTom;
+use rust_eze_tomtom::{TomTom, plain::PlainContent};
 use ui_lib::RunnableUi;
 
 pub struct MyRobot {
@@ -25,12 +26,24 @@ impl Runnable for MyRobot {
             println!("Spotlight error: {:?}", error);
         });
 
+        // shuffle vector
+        let mut contents = vec![
+            PlainContent::Bush,
+            PlainContent::Tree,
+            PlainContent::Rock,
+            PlainContent::Fish,
+        ];
+
+        contents.shuffle(&mut rand::thread_rng());
+
+        let item = contents.pop().unwrap();
+
         if let Err(error) = TomTom::go_to_tile(
             self,
             world,
             false,
             None,
-            Some(rust_eze_tomtom::plain::PlainContent::Bush),
+            Some(item),
         ) {
             println!("TomTom error: {:?}", error);
         }
