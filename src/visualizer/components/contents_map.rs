@@ -86,53 +86,53 @@ impl ContentsMapComponent {
 
         let current_texture = Texture::from_content(&tile.content);
 
-        if let (Some(previous_texture), Some(current_texture)) = (previous_texture, current_texture) {
-        if let Some(instance) = self.instances.get_mut(&previous_texture) {
-            // Gets the position of the content in the instance array.
-            let element_position: usize = instance
-                .elements
-                .iter()
-                .position(|(e_x, e_y)| x == *e_x && y == *e_y)
-                .unwrap()
-                .clone();
+        if let (Some(previous_texture), Some(current_texture)) = (previous_texture, current_texture)
+        {
+            if let Some(instance) = self.instances.get_mut(&previous_texture) {
+                // Gets the position of the content in the instance array.
+                let element_position: usize = instance
+                    .elements
+                    .iter()
+                    .position(|(e_x, e_y)| x == *e_x && y == *e_y)
+                    .unwrap()
+                    .clone();
 
-            // Gets corresponding draw param.
-            let draw_param = instance
-                .array
-                .instances()
-                .get(element_position)
-                .unwrap()
-                .clone();
-
-            // Removes the draw param slicing the array.
-            instance.array.set(
-                instance
+                // Gets corresponding draw param.
+                let draw_param = instance
                     .array
                     .instances()
-                    .into_iter()
-                    .enumerate()
-                    .filter_map(|(i, draw_param)| {
-                        if i != element_position {
-                            Some(draw_param.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>(),
-            );
+                    .get(element_position)
+                    .unwrap()
+                    .clone();
 
-            // Pushes the draw param in the new instance of the texture.
-            self.instances
-                .get_mut(&current_texture)
-                .unwrap()
-                .array
-                .push(draw_param.clone());
-        }
+                // Removes the draw param slicing the array.
+                instance.array.set(
+                    instance
+                        .array
+                        .instances()
+                        .into_iter()
+                        .enumerate()
+                        .filter_map(|(i, draw_param)| {
+                            if i != element_position {
+                                Some(draw_param.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                );
 
-        // Edits the content of the map.
-        map[y][x].content = tile.content.clone();
+                // Pushes the draw param in the new instance of the texture.
+                self.instances
+                    .get_mut(&current_texture)
+                    .unwrap()
+                    .array
+                    .push(draw_param.clone());
+            }
+
+            // Edits the content of the map.
+            map[y][x].content = tile.content.clone();
         }
-        
     }
 }
 

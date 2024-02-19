@@ -6,7 +6,7 @@ use robotics_lib::{
     world::coordinates::Coordinate,
 };
 use rust_eze_spotlight::Spotlight;
-use rust_eze_tomtom::{TomTom, plain::PlainContent};
+use rust_eze_tomtom::{plain::PlainContent, TomTom};
 use ui_lib::RunnableUi;
 
 pub struct MyRobot {
@@ -38,13 +38,7 @@ impl Runnable for MyRobot {
 
         let item = contents.pop().unwrap();
 
-        if let Err(error) = TomTom::go_to_tile(
-            self,
-            world,
-            false,
-            None,
-            Some(item),
-        ) {
+        if let Err(error) = TomTom::go_to_tile(self, world, false, None, Some(item)) {
             println!("TomTom error: {:?}", error);
         }
 

@@ -1,18 +1,22 @@
 use std::{cell::RefCell, collections::VecDeque, env, path::PathBuf, rc::Rc};
 
+use ai_builder::{get_world_generator_parameters as builder_get_world_generator_parameters, BuilderAi};
 use gamepad::GamePad;
 use ggez::{
     event::{Axis, EventHandler},
-    graphics::FontData, glam::vec2,
+    glam::vec2,
+    graphics::FontData,
 };
-use midgard::world_generator::{WorldGenerator, WorldGeneratorParameters};
+use midgard::{params::{WorldGeneratorParameters, ContentsRadii}, WorldGenerator};
 use robot::MyRobot;
-use rusteze_ai_artemisia::ArtemisIA;
+use rusteze_ai_artemisia::{
+    get_world_generator_parameters as artemis_get_world_generator_parameters, ArtemisIA,
+};
 use visualizer::Visualizer;
 
 use robotics_lib::{
     event::events::Event,
-    runner::{Robot, Runner},
+    runner::{Robot, Runnable, Runner},
     world::{tile::Tile, world_generator::Generator},
 };
 use wrapper::UiWrapper;
@@ -21,6 +25,9 @@ mod gamepad;
 mod robot;
 mod visualizer;
 mod wrapper;
+
+const WORLD_SIZE: usize = 256;
+const WORLD_SCALE: f64 = 0.5;
 
 struct State {
     visualizer: Visualizer,
@@ -82,6 +89,14 @@ impl EventHandler for State {
 }
 
 fn main() {
+    // Gets the robot name from the command line arguments.
+    let robot_name = std::env::args()
+        .map(|arg| arg.to_owned())
+        .collect::<Vec<String>>()
+        .get(1)
+        .unwrap_or(&String::from("myrobot"))
+        .clone();
+
     // Create a new context and event loop.
     let (mut ctx, event_loop) = ggez::ContextBuilder::new("ui_guido", "Davide Andreolli")
         .window_setup(
@@ -109,41 +124,64 @@ fn main() {
             panic!("Error while building the context: {:?}", error);
         });
 
+    // Adds the font to the context.
     ctx.gfx.add_font(
         "kode",
         FontData::from_path(&ctx, "/fonts/kode.ttf").unwrap(),
     );
 
-    let world_size = 256;
+    // Creates parameters based on choosen robot.
+    let world_generator_parameters = match robot_name.clone().as_str() {
+        "myrobot" => WorldGeneratorParameters {
+            world_size: WORLD_SIZE,
+            world_scale: WORLD_SCALE,
+            seed: 0,
+            ..Default::default()
+        },
+        "artemisia" => WorldGeneratorParameters {
+            world_size: WORLD_SIZE,
+            world_scale: WORLD_SCALE,
+            ..artemis_get_world_generator_parameters()
+        },
+        "builder" => WorldGeneratorParameters {
+            world_size: WORLD_SIZE,
+            world_scale: WORLD_SCALE,
+            ..builder_get_world_generator_parameters()
+        },        
+        _ => panic!("Unknown robot name: {}", robot_name),
+    };
 
     // Creates the world generator parameters.
     let params = WorldGeneratorParameters {
-        // seed: 1,     // Uncomment to have a deterministic world.
-        world_size,
-        amount_of_rivers: Some(4.0),
-        amount_of_streets: Some(3.0),
-        amount_of_teleports: Some(2.0),
-        always_sunny: true,
-        ..Default::default()
+        world_size: WORLD_SIZE,
+        world_scale: WORLD_SCALE,
+        contents_radii: ContentsRadii {
+            ..world_generator_parameters.contents_radii
+        },
+        ..world_generator_parameters
     };
 
     // Generates the world.
     let mut world_generator = WorldGenerator::new(params);
     let (map, spawn_point, _weather, _max_score, _score_table) = world_generator.gen();
 
+    // Creates the shared states.
     let world_rc: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> = Rc::new(RefCell::new(None));
     let event_queue_rc: Rc<RefCell<VecDeque<Event>>> = Rc::new(RefCell::new(VecDeque::new()));
     let map_rc = Rc::new(RefCell::new(map));
 
-    // Creates the robot and the wrapper.
+    // Creates the UI wrapper for the robot.
     let runnable_ui = UiWrapper::new(event_queue_rc.clone(), world_rc.clone());
 
-    // let my_robot = MyRobot::new(Box::new(runnable_ui), robot);
-    let my_robot = ArtemisIA::new(world_size, Box::new(runnable_ui));  
+    // Chooses the runnable based on the robot name.
+    let runnable: Box<dyn Runnable> = match robot_name.clone().as_str() {
+        "myrobot" => Box::new(MyRobot::new(Box::new(runnable_ui), Robot::new())),
+        "artemisia" => Box::new(ArtemisIA::new(WORLD_SIZE, Box::new(runnable_ui))),
+        "builder" => Box::new(BuilderAi::new(Box::new(runnable_ui), WORLD_SIZE)),
+        _ => panic!("Unknown robot name: {}", robot_name),
+    };
 
-
-
-    let runner = Runner::new(Box::new(my_robot), &mut world_generator).unwrap();
+    let runner = Runner::new(runnable, &mut world_generator).unwrap();
 
     // Creates the visualizer.
     let mut visualizer = Visualizer::new(
@@ -156,6 +194,7 @@ fn main() {
         4.0,
     );
 
+    // Centers the visualizer on the spawn point at start.
     visualizer.set_center(&ctx.gfx, vec2(spawn_point.1 as f32, spawn_point.0 as f32));
 
     let state = State {

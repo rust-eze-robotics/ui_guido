@@ -65,7 +65,8 @@ impl Visualizer {
         let tiles_map_component = TilesMapComponent::from_map(gfx, map_rc.clone());
         let contents_map_component = ContentsMapComponent::from_map(gfx, map_rc.clone());
         let player_component = PlayerComponent::new(gfx, initial_position, (map_len, map_len));
-        let dialog_component = DialogComponent::new(gfx, "Robot is sleeping...\nZzzZzzzZzzzz".to_string());
+        let dialog_component =
+            DialogComponent::new(gfx, "Robot is sleeping...\nZzzZzzzZzzzz".to_string());
 
         Self {
             runner,
@@ -193,13 +194,14 @@ impl Visualizer {
     /// If visualizer doesn't have any knowledge about the robot's known tiles, it will hide them
     /// all.
     pub fn handle_event(&mut self, gfx: &impl Has<GraphicsContext>) -> GameResult {
-        
         while let Some(event) = self.event_queue().borrow_mut().pop_front() {
-
             self.tiles_map_component
                 .update(TilesMapComponentUpdateParam::new(
                     self.world_rc.borrow().clone().unwrap_or(vec![
-                        vec![None; self.map_size.x as usize];
+                        vec![
+                            None;
+                            self.map_size.x as usize
+                        ];
                         self.map_size.y as usize
                     ]),
                 ))?;
@@ -279,7 +281,7 @@ impl Visualizer {
                         .update(ContentsMapComponentUpdateParam::new(
                             ContentsMapComponentUpdateType::ContentChange(tile, coords),
                         ))?;
-                    
+
                     break;
                 }
                 Event::AddedToBackpack(content, _count) => {
