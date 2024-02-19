@@ -22,6 +22,7 @@ use crate::visualizer::components::contents_map::ContentsMapComponentUpdateType;
 use self::components::contents_map::{
     ContentsMapComponent, ContentsMapComponentParam, ContentsMapComponentUpdateParam,
 };
+use self::components::dialog::{DialogComponent, DialogComponentParam, DialogComponentUpdateParam};
 use self::components::player::{PlayerComponent, PlayerComponentParam, PlayerComponentUpdateParam};
 use self::components::tails_map::{
     TilesMapComponent, TilesMapComponentParam, TilesMapComponentUpdateParam,
@@ -43,6 +44,7 @@ pub struct Visualizer {
     tiles_map_component: TilesMapComponent,
     contents_map_component: ContentsMapComponent,
     player_component: PlayerComponent,
+    dialog_component: DialogComponent,
 }
 
 impl Visualizer {
@@ -63,6 +65,7 @@ impl Visualizer {
         let tiles_map_component = TilesMapComponent::from_map(gfx, map_rc.clone());
         let contents_map_component = ContentsMapComponent::from_map(gfx, map_rc.clone());
         let player_component = PlayerComponent::new(gfx, initial_position, (map_len, map_len));
+        let dialog_component = DialogComponent::new(gfx, "Robot is idle Zzzzzz.....".to_string());
 
         Self {
             runner,
@@ -74,6 +77,7 @@ impl Visualizer {
             tiles_map_component,
             contents_map_component,
             player_component,
+            dialog_component,
         }
     }
 
@@ -123,6 +127,14 @@ impl Visualizer {
             &mut canvas,
             DrawParam::new(),
             PlayerComponentParam::new(self.scale),
+        )?;
+
+
+        // Print the dialog component 
+        self.dialog_component.draw(
+            &mut canvas,
+            DrawParam::new(),
+            DialogComponentParam::new(self.origin)
         )?;
 
         // Render the components on the canvas.
@@ -209,16 +221,41 @@ impl Visualizer {
                 Event::Moved(_tile, coords) => {
                     self.player_component
                         .update(PlayerComponentUpdateParam::new(coords))?;
+
+                    self.dialog_component
+                        .update(DialogComponentUpdateParam::new(format!("Robot has moved in {:?}", coords)))?;
+
                     self.set_center(gfx, vec2(coords.1 as f32, coords.0 as f32));
                     break;
                 }
                 Event::TileContentUpdated(tile, coords) => {
+
+                    self.dialog_component
+                        .update(DialogComponentUpdateParam::new(format!(
+                            "The tile {:?} has been updated in {:?}",
+                            &tile.tile_type,
+                            coords
+                        )))?;
+
                     self.contents_map_component
                         .update(ContentsMapComponentUpdateParam::new(
                             ContentsMapComponentUpdateType::ContentChange(tile, coords),
                         ))?;
+
                     break;
-                }
+                },
+                Event::Ready => {
+                    self.dialog_component
+                        .update(DialogComponentUpdateParam::new(
+                            "Robot is ready!".to_string()
+                        ))?;
+                },
+                Event::DayChanged(day) => {
+                    self.dialog_component
+                        .update(DialogComponentUpdateParam::new(
+                            format!("The day has changed. Now is {:?}", day)
+                        ))?;
+                },
                 _ => {}
             };
         }

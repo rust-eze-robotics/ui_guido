@@ -9,22 +9,20 @@ use robotics_lib::{
 };
 use rust_eze_spotlight::Spotlight;
 use rust_eze_tomtom::TomTom;
+use ui_lib::RunnableUi;
 
 pub struct MyRobot {
-    pub world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-    pub event_queue: Rc<RefCell<VecDeque<Event>>>,
-    robot: Robot,
+    pub runnable_ui: Box<dyn RunnableUi>,
+    pub robot: Robot,
 }
 
 impl MyRobot {
     pub fn new(
-        world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-        event_queue: Rc<RefCell<VecDeque<Event>>>,
+        runnable_ui: Box<dyn RunnableUi>,
         robot: Robot,
     ) -> Self {
         MyRobot {
-            world,
-            event_queue,
+            runnable_ui,
             robot,
         }
     }
@@ -48,11 +46,11 @@ impl Runnable for MyRobot {
 
         // Required world update to the visualizer. See the RunnableWrapper
         // documentation for more information.
-        self.world.replace(Some(robot_map(world).unwrap()));
+        self.runnable_ui.process_tick(world);
     }
 
     fn handle_event(&mut self, event: Event) {
-        self.event_queue.borrow_mut().push_back(event);
+        self.runnable_ui.handle_event(event);
     }
 
     fn get_energy(&self) -> &Energy {

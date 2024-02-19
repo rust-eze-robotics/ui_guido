@@ -14,7 +14,7 @@ use robotics_lib::{
     runner::{Robot, Runner},
     world::{tile::Tile, world_generator::Generator},
 };
-use wrapper::RunnableWrapper;
+use wrapper::UiWrapper;
 
 mod gamepad;
 mod robot;
@@ -134,9 +134,10 @@ fn main() {
 
     // Creates the robot and the wrapper.
     let robot = Robot::new();
-    let my_robot = MyRobot::new(world_rc.clone(), event_queue_rc.clone(), robot);
-    let wrapper = RunnableWrapper::new(world_rc.clone(), Box::new(my_robot));
-    let runner = Runner::new(Box::new(wrapper), &mut world_generator).unwrap();
+    let runnable_ui = UiWrapper::new(event_queue_rc.clone(), world_rc.clone());
+
+    let my_robot = MyRobot::new(Box::new(runnable_ui), robot);
+    let runner = Runner::new(Box::new(my_robot), &mut world_generator).unwrap();
 
     // Creates the visualizer.
     let visualizer = Visualizer::new(

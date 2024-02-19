@@ -1,75 +1,48 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{rc::Rc, cell::RefCell, collections::VecDeque};
 
-use robotics_lib::{
-    energy::Energy,
-    event::events::Event,
-    interface::robot_map,
-    runner::{backpack::BackPack, Runnable},
-    world::{coordinates::Coordinate, tile::Tile},
-};
+use robotics_lib::{event::events::Event, world::{tile::Tile, World}, interface::robot_map};
+use ui_lib::RunnableUi;
 
-/// The structure implements the Runnable trait and works as intermediary
-/// between the robot given and the visualizer. It is used to update the
-/// visualizer's world state and to process the robot's actions.
-///
-/// Visualizer requires that the given Runner has internally a RunnableWrapper
-/// instance as the robot.
-/// Also, user robot, given for parameter 'runnable', MUST push events to the
-/// given event queue.
-///
-/// If the previous rules are not followed, the visualizer will not work as
-/// expected.
-///
-/// These restrictions are a limitation imposed by the robotic library,
-/// unfortunately.
-pub struct RunnableWrapper {
+/// UiWrapper is used by Runnable to communicate world updates and
+/// events to the visualizer.
+pub struct UiWrapper {
+    event_queue: Rc<RefCell<VecDeque<Event>>>,
     world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-    runnable: Box<dyn Runnable>,
 }
 
-impl RunnableWrapper {
-    /// The constructor creates a new robot wrapper structure.
+impl UiWrapper {
+
+    /// Creates a new instance of UiWrapper.
     pub fn new(
+        event_queue: Rc<RefCell<VecDeque<Event>>>,
         world: Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>>,
-        runnable: Box<dyn Runnable>,
     ) -> Self {
-        RunnableWrapper { world, runnable }
+        UiWrapper {
+            event_queue,
+            world,
+        }
+    }    
+
+    /// Returns the world.
+    pub fn world(&self) -> Rc<RefCell<Option<Vec<Vec<Option<Tile>>>>>> {
+        self.world.clone()
+    }
+
+    /// Returns the event queue.
+    pub fn event_queue(&self) -> Rc<RefCell<VecDeque<Event>>> {
+        self.event_queue.clone()
     }
 }
 
-impl Runnable for RunnableWrapper {
-    fn process_tick(&mut self, world: &mut robotics_lib::world::World) {
-        // Process the robot's action and replace the shared world reference
-        // content with the latest one.
-        self.runnable.process_tick(world);
+impl RunnableUi for UiWrapper {
+
+    /// Updates the world.
+    fn process_tick(&mut self, world: &mut World) {
         self.world.replace(Some(robot_map(world).unwrap()));
     }
 
+    /// Pushes the coming event to the events queue.
     fn handle_event(&mut self, event: Event) {
-        self.runnable.handle_event(event.clone());
-    }
-
-    fn get_energy(&self) -> &Energy {
-        self.runnable.get_energy()
-    }
-
-    fn get_energy_mut(&mut self) -> &mut Energy {
-        self.runnable.get_energy_mut()
-    }
-
-    fn get_coordinate(&self) -> &Coordinate {
-        self.runnable.get_coordinate()
-    }
-
-    fn get_coordinate_mut(&mut self) -> &mut Coordinate {
-        self.runnable.get_coordinate_mut()
-    }
-
-    fn get_backpack(&self) -> &BackPack {
-        self.runnable.get_backpack()
-    }
-
-    fn get_backpack_mut(&mut self) -> &mut BackPack {
-        self.runnable.get_backpack_mut()
+        self.event_queue.borrow_mut().push_back(event);
     }
 }
